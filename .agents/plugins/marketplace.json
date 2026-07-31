@@ -1,0 +1,20 @@
+{
+  "name": "didim",
+  "interface": {
+    "displayName": "Didim Plugins"
+  },
+  "plugins": [
+    {
+      "name": "didim-mcp",
+      "source": {
+        "source": "local",
+        "path": "./plugins/didim-mcp"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

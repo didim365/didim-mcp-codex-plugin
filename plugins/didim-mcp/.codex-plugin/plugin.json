@@ -1,0 +1,19 @@
+{
+  "name": "didim-mcp",
+  "version": "0.1.0",
+  "description": "Codex plugin that ships Didim MCP setup/usage skills and helper scripts. It does not register an MCP server itself; the setup script writes the server config into the user's config.toml.",
+  "author": { "name": "Didim365" },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Didim MCP",
+    "shortDescription": "Set up and use Didim MCP safely from Codex.",
+    "longDescription": "Deploys two skills (first-time setup and safe usage) plus PowerShell/CMD helper scripts. Ask Codex to \"Didim MCP 설정해줘\" to configure your personal API key into ~/.codex/config.toml; related questions then apply the usage skill automatically.",
+    "developerName": "Didim365",
+    "category": "Productivity",
+    "capabilities": ["Read"],
+    "defaultPrompt": [
+      "Didim MCP 설정해줘",
+      "Show the Didim MCP tools available to me."
+    ]
+  }
+}
