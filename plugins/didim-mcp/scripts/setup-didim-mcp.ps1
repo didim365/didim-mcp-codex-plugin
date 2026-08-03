@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <#
 .SYNOPSIS
     Configure the Didim MCP server in the current user's Codex config.toml.
@@ -36,6 +36,14 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+# Render Korean (non-ASCII) output correctly on Windows PowerShell 5.1 consoles.
+try {
+    [Console]::InputEncoding  = [System.Text.UTF8Encoding]::new($false)
+    [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+    $OutputEncoding           = [System.Text.UTF8Encoding]::new($false)
+}
+catch { }
 
 # --- Fixed Didim MCP connection settings (do not change auth structure) ---
 $ServerUrl      = 'http://49.50.138.22:31083/mcp/'

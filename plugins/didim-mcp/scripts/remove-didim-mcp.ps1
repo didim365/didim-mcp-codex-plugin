@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <#
 .SYNOPSIS
     Remove the Didim MCP server block from the current user's Codex config.toml.
@@ -31,6 +31,14 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+# Render Korean (non-ASCII) output correctly on Windows PowerShell 5.1 consoles.
+try {
+    [Console]::InputEncoding  = [System.Text.UTF8Encoding]::new($false)
+    [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+    $OutputEncoding           = [System.Text.UTF8Encoding]::new($false)
+}
+catch { }
 
 # Offer to close running Codex processes (exact ProcessName match only). Never
 # closes this script's own process or ancestors. If launched from inside Codex,

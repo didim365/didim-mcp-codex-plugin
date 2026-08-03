@@ -223,6 +223,7 @@ Copy-Item "$env:USERPROFILE\.codex\config.toml.backup-YYYYMMDD-HHmmss" "$env:USE
 | `No Didim MCP tools are exposed` | `Didim MCP 재설정` 요청으로 setup 재실행, `dv_` 키가 유효/최신인지 확인 |
 | 인증 실패 | `config.toml`의 `X-Didim-Vault-Api-Key` 값이 올바른 개인 `dv_` 키인지 확인 |
 | 설치가 안 됨 | 플러그인 화면에 **Didim** 마켓플레이스가 추가됐는지 확인 (CLI 사용자는 `codex plugin marketplace list`) |
+| 스크립트 실행 시 한글이 `??`/깨져서 나옴 | Windows PowerShell 5.1의 UTF-8 처리 문제입니다. **플러그인을 최신 버전(0.1.3 이상)으로 업데이트**하세요. 스크립트가 UTF-8 BOM + `chcp 65001` + 콘솔 인코딩을 적용해 한글을 정상 출력합니다. |
 
 ---
 
