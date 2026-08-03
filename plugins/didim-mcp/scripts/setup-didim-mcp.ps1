@@ -149,15 +149,22 @@ Write-Host '-----------------'
 $codexDir = Join-Path $HOME '.codex'
 $cfgPath  = Join-Path $codexDir 'config.toml'
 
-if (-not (Test-Path -LiteralPath $codexDir)) {
-    New-Item -ItemType Directory -Path $codexDir -Force | Out-Null
-    Write-Host "Created directory: $codexDir"
-}
-
-# 2. Read existing config (UTF-8) if present.
+# 2. Read existing config (UTF-8) if present, and detect an existing Didim block.
 $existing = ''
 if (Test-Path -LiteralPath $cfgPath) {
     $existing = [System.IO.File]::ReadAllText($cfgPath, [System.Text.Encoding]::UTF8)
+}
+$hasExisting = ($existing -match '(?m)^\s*\[\s*mcp_servers\.didim-mcp(\s*\]|\.[^\]]+\])')
+
+if ($hasExisting) {
+    # Replace / rotate. Never read, print, or compare the old key value.
+    Write-Host '기존 Didim MCP 설정을 찾았습니다.'
+    Write-Host '새 API Key를 입력하면 기존 API Key와 Didim MCP 설정이 교체됩니다.'
+    Write-Host '변경 전 config.toml은 백업됩니다.'
+}
+else {
+    Write-Host 'Didim MCP 최초 설정을 시작합니다.'
+    Write-Host '새 API Key를 입력하면 MCP 연결 설정이 생성됩니다.'
 }
 
 # 3. Acquire the key via hidden input (never as a command-line argument).
@@ -202,7 +209,11 @@ else {
     $final = $preserved + $nl + $nl + $block
 }
 
-# 7. Timestamped backup before writing (only when a file already exists).
+# 7. Only now (key validated) touch the filesystem: ensure dir, then back up.
+if (-not (Test-Path -LiteralPath $codexDir)) {
+    New-Item -ItemType Directory -Path $codexDir -Force | Out-Null
+    Write-Host "Created directory: $codexDir"
+}
 if (Test-Path -LiteralPath $cfgPath) {
     $stamp  = Get-Date -Format 'yyyyMMdd-HHmmss'
     $backup = "$cfgPath.backup-$stamp"
@@ -218,8 +229,9 @@ $utf8 = New-Object System.Text.UTF8Encoding($false)
 $key = $null; $block = $null; $final = $null
 [System.GC]::Collect()
 
+$action = if ($hasExisting) { 'updated (key replaced)' } else { 'configured' }
 Write-Host ''
-Write-Host "[OK] Didim MCP configured in: $cfgPath" -ForegroundColor Green
+Write-Host "[OK] Didim MCP $action in: $cfgPath" -ForegroundColor Green
 Write-Host '     (Your key was not displayed and was written only to your local config.toml.)'
 
 # 10. Offer to close running Codex processes so a fresh launch reloads

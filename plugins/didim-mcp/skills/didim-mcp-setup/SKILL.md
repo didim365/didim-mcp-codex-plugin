@@ -1,15 +1,21 @@
 ---
 name: didim-mcp-setup
 description: >-
-  First-time setup and troubleshooting for connecting the Didim MCP server in
-  Codex on Windows. Use this when the user wants to set up, configure, connect,
-  reconfigure, or re-register Didim MCP; register, change, or update their
-  personal dv_ API key; or reports that Didim MCP does not appear under /mcp,
-  its tools are not loading, or they see "No Didim MCP tools are exposed in this
-  session." Triggers include phrases like "Didim MCP 설정해줘", "Didim MCP API
-  Key 등록해줘", "dv_ 키를 등록해줘", "Didim MCP가 /mcp에 안 보여", "Didim MCP
-  도구가 로드되지 않아", "Didim MCP 초기 설정", "Didim MCP 재설정", and
-  "Didim MCP 키 변경".
+  First-time setup, API key change/rotation, and troubleshooting for connecting
+  the Didim MCP server in Codex on Windows. Use this when the user wants to set
+  up, configure, connect, reconfigure, or re-register Didim MCP; register,
+  change, replace, rotate, re-register, or update their personal dv_ API key;
+  overwrite an existing Didim MCP config; reconnect Didim MCP; or reports that
+  Didim MCP does not appear under /mcp, its tools are not loading, authentication
+  is failing, the key expired or is wrong, or they see "No Didim MCP tools are
+  exposed in this session." Korean triggers: "Didim MCP 설정해줘", "Didim MCP API
+  Key 등록해줘"/"변경해줘"/"바꿔줘", "dv_ 키를 교체해줘"/"등록해줘", "Didim MCP
+  인증 키 재등록해줘", "인증 키 갱신", "기존 MCP 키가 만료됐어", "잘못된 dv_ 키
+  수정", "Didim MCP 인증이 실패하니 키를 다시 설정해줘", "Didim MCP가 /mcp에 안
+  보여", "Didim MCP 초기 설정", "Didim MCP 재설정", "Didim MCP 키 변경",
+  "Didim MCP 재연결". English triggers: "change/replace/rotate Didim MCP API
+  key", "reconfigure Didim MCP authentication", "update expired Didim MCP key",
+  "re-register Didim MCP key", "overwrite existing Didim MCP config".
 ---
 
 # Didim MCP Setup
@@ -18,6 +24,12 @@ Guide the user through configuring the Didim MCP server for their own machine by
 running the bundled setup script. This plugin does **not** register an MCP server
 by itself — the setup script writes the connection and the user's personal API
 key into their `~/.codex/config.toml`.
+
+**First-time setup and key change/rotation use the SAME script.** The script
+auto-detects an existing `[mcp_servers.didim-mcp]` block: if present it replaces
+the old key (after backing up `config.toml`); if absent it creates the config.
+For a key change, do **not** run `remove-didim-mcp.ps1` first — just re-run setup;
+it swaps the key in place and preserves all other MCP/Codex settings.
 
 ## Preconditions
 

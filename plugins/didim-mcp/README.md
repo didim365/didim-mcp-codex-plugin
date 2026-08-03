@@ -49,6 +49,14 @@ ancestors. Default match is the exact ProcessName `codex` (no substring, no
 
 Then fully restart the Codex app and run `/mcp` to confirm `didim-mcp` and its tools.
 
+## Change / rotate the API key
+
+Ask Codex `Didim MCP API Key 변경해줘` (or "change/rotate Didim MCP key"). This
+re-runs the **same** setup script — no reinstall, no remove first. It auto-detects
+the existing `[mcp_servers.didim-mcp]` block, backs up `config.toml`, and replaces
+only the key. Enter the new `dv_` key in the hidden prompt. If you cancel or the
+key is invalid, the existing config is left unchanged. Restart Codex to apply.
+
 ## Remove
 
 ```powershell
