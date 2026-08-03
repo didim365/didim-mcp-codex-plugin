@@ -48,7 +48,8 @@ Codex Windows 앱의 화면 UI만으로 설치합니다. (별도 명령어 입�
 10. **스크립트 실행 승인** — Skill이 제안하는 설정 스크립트 실행을 승인합니다.
 11. **개인 `dv_...` Key 입력** — 별도 PowerShell 창에서 **숨김 입력**으로 키를 입력합니다.
     (채팅창에 붙여넣지 않습니다.)
-12. **Codex 완전 종료 후 재실행**
+12. **Codex 완전 종료 후 재실행** — 설정은 이미 저장되었지만, 반영하려면 Codex를 완전히 종료 후 다시 실행해야 합니다.
+    (일부 환경은 즉시 재시작 시 설정이 반영되지 않습니다. 프로세스 종료 동작은 아래 "프로세스 종료" 참고.)
 13. **`/mcp` 확인** — `didim-mcp` 서버와 노출된 도구를 확인합니다.
 14. **일반 질문 시 자동 적용** — 이후 Didim 관련 질문에서 `didim-mcp-usage` Skill이 자동 적용됩니다.
 
@@ -82,7 +83,17 @@ Skill이 스크립트를 실행하지 못하는 경우, 설치된 플러그인 �
 
 스크립트가 자동으로 하는 일: `~/.codex` 및 `config.toml` 생성(없으면) → 변경 전 타임스탬프 백업 →
 `dv_` 형식 검증 → `[mcp_servers.didim-mcp]` 블록만 추가/교체(다른 설정 보존) → UTF-8 저장.
-여러 번 실행해도 `didim-mcp` 블록은 하나만 유지됩니다(멱등).
+여러 번 실행해도 `didim-mcp` 블록은 하나만 유지됩니다(멱등). **설정 저장은 프로세스 종료 성공 여부와 무관하게 먼저 완료됩니다.**
+
+> **프로세스 종료 (setup):** 기본 매칭은 **정확히 일치하는 ProcessName `codex`뿐**입니다(부분 문자열 매칭 없음).
+> - **별도 `.cmd` 창에서 실행한 경우:** 종료 대상 목록을 보여주고 `[y/N]`(기본 **N**) 확인 후에만 종료합니다.
+> - **Codex 내부(Skill)에서 실행한 경우:** 현재 Codex 앱은 자동 종료할 수 없습니다. 스크립트는 종료를 시도하지 않고
+>   "모든 Codex 창을 직접 종료 후 재실행"을 안내합니다.
+> - 스크립트 자신의 프로세스와 모든 조상 PID는 **절대 종료하지 않습니다.**
+> - 옵션: `-SkipProcessKill`(프롬프트 생략), `-KillWithoutConfirmation`(확인 없이 종료 — 위험, 신뢰 환경에서만),
+>   `-ProcessNames @('codex')`(정확한 이름 커스터마이즈).
+>
+> **어떤 경우든 새 설정 반영에는 Codex 완전 재시작이 필요합니다.**
 
 최종적으로 `config.toml`에 작성되는 형태:
 ```toml
@@ -155,6 +166,9 @@ codex plugin remove didim-mcp@didim
   ```powershell
   powershell -NoProfile -ExecutionPolicy Bypass -File ".\plugins\didim-mcp\scripts\remove-didim-mcp.ps1"
   ```
+
+> remove는 **기본적으로 프로세스를 종료하지 않습니다**(y/N 프롬프트도 없음). 제거 후 Codex를 직접 완전 종료·재실행하세요.
+> 종료까지 원하면 `-KillCodexProcesses`(정확한 이름 `codex` 대상, `[y/N]` 기본 N)를 명시적으로 전달합니다.
 
 ### 백업 복원
 

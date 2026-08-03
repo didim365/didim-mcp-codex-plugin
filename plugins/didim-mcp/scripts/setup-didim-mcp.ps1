@@ -13,11 +13,27 @@
     The key is never printed to the console, error messages, or logs, and is
     never written anywhere except the user's own config.toml.
 
+.PARAMETER SkipProcessKill
+    Do not offer to close running Codex processes after writing the config.
+
+.PARAMETER KillWithoutConfirmation
+    Close matching processes without the [y/N] prompt (still never touches this
+    script's own process or its ancestors).
+
+.PARAMETER ProcessNames
+    EXACT ProcessName values (no .exe, no substring matching) to close.
+    Default: codex. Pass your own, e.g. -ProcessNames @('codex') if the Codex
+    process is named differently on your machine.
+
 .NOTES
     No administrator privileges required. Restart Codex after running.
 #>
 [CmdletBinding()]
-param()
+param(
+    [switch]$SkipProcessKill,
+    [switch]$KillWithoutConfirmation,
+    [string[]]$ProcessNames = @('codex')
+)
 
 $ErrorActionPreference = 'Stop'
 
@@ -51,6 +67,78 @@ function Remove-DidimBlock {
         if (-not $inDidim) { $out.Add($line) }
     }
     return ($out -join "`r`n")
+}
+
+# Offer to close running Codex processes so the new config.toml is picked up on
+# the next launch. Matches EXACT ProcessName values only (no substring). Never
+# closes this script's own process or any ancestor. If launched from inside
+# Codex, it does not try to close anything and tells the user to quit manually.
+function Invoke-CodexProcessClose {
+    param(
+        [string[]]$Names,
+        [switch]$KillWithoutConfirmation
+    )
+
+    # Protected PIDs: this process + ancestor chain. Also detect whether an
+    # ancestor is itself a Codex process (i.e. we were launched from inside it).
+    $protected = New-Object System.Collections.Generic.HashSet[int]
+    [void]$protected.Add($PID)
+    $launchedFromCodex = $false
+    $cur = $PID
+    for ($i = 0; $i -lt 20 -and $cur -gt 0; $i++) {
+        $p = Get-CimInstance Win32_Process -Filter "ProcessId=$cur" -ErrorAction SilentlyContinue
+        if (-not $p) { break }
+        if ([int]$p.ProcessId -ne $PID) {
+            $aname = ($p.Name -replace '\.exe$', '')
+            if ($Names -contains $aname) { $launchedFromCodex = $true }
+        }
+        $cur = [int]$p.ParentProcessId
+        if ($cur -gt 0) { [void]$protected.Add($cur) }
+    }
+
+    if ($launchedFromCodex) {
+        Write-Host ''
+        Write-Host 'This script is running inside Codex, so it cannot close the Codex app for you.' -ForegroundColor Yellow
+        Write-Host 'Fully quit ALL Codex windows yourself, then start Codex again.'
+        return
+    }
+
+    # Standalone window: close only exact-name matches, excluding protected PIDs.
+    $targets = @(
+        Get-Process -ErrorAction SilentlyContinue |
+        Where-Object { ($Names -contains $_.ProcessName) -and -not $protected.Contains($_.Id) }
+    )
+
+    if ($targets.Count -eq 0) {
+        Write-Host 'No matching Codex processes are running.'
+        return
+    }
+
+    Write-Host ''
+    Write-Host 'These Codex processes can be closed so the new config loads on next launch:' -ForegroundColor Yellow
+    $targets | Sort-Object ProcessName, Id | ForEach-Object {
+        Write-Host ("  {0}  (PID {1})" -f $_.ProcessName, $_.Id)
+    }
+
+    $go = [bool]$KillWithoutConfirmation
+    if (-not $go) {
+        $ans = Read-Host 'Close them now? [y/N]'   # default: No
+        $go = ($ans -match '^(y|yes)$')
+    }
+    if (-not $go) {
+        Write-Host 'Left running. Quit Codex yourself before restarting.'
+        return
+    }
+
+    foreach ($t in $targets) {
+        try {
+            Stop-Process -Id $t.Id -Force -ErrorAction Stop
+            Write-Host ("  closed {0} (PID {1})" -f $t.ProcessName, $t.Id) -ForegroundColor Green
+        }
+        catch {
+            Write-Host ("  could not close {0} (PID {1}): {2}" -f $t.ProcessName, $t.Id, $_.Exception.Message) -ForegroundColor Red
+        }
+    }
 }
 
 Write-Host ''
@@ -133,9 +221,23 @@ $key = $null; $block = $null; $final = $null
 Write-Host ''
 Write-Host "[OK] Didim MCP configured in: $cfgPath" -ForegroundColor Green
 Write-Host '     (Your key was not displayed and was written only to your local config.toml.)'
+
+# 10. Offer to close running Codex processes so a fresh launch reloads
+#     config.toml. Some environments do not pick up the change on an immediate
+#     restart. Any failure here must NOT fail the (already saved) config.
+if (-not $SkipProcessKill) {
+    try {
+        Invoke-CodexProcessClose -Names $ProcessNames -KillWithoutConfirmation:$KillWithoutConfirmation
+    }
+    catch {
+        Write-Host "Note: could not manage Codex processes: $($_.Exception.Message)" -ForegroundColor Yellow
+        Write-Host '      Your config was saved; just quit Codex manually and restart.'
+    }
+}
+
 Write-Host ''
 Write-Host 'Next steps:' -ForegroundColor Yellow
-Write-Host '  1. Fully quit every Codex window / session.'
-Write-Host '  2. Start Codex again.'
+Write-Host '  1. Fully quit ALL Codex windows (this script cannot always do it for you).'
+Write-Host '  2. Start the Codex app again.'
 Write-Host '  3. Run  /mcp  and confirm the "didim-mcp" server and its tools appear.'
 Write-Host ''

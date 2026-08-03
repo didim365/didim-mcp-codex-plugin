@@ -66,10 +66,22 @@ Briefly tell the user, then ask for explicit approval before doing anything:
 
 ## After setup
 
-Tell the user to:
+The config is saved regardless of what happens to any process. To pick up the
+new config, Codex must be fully restarted — the plugin cannot reload it live.
 
-1. Fully quit every Codex window/session.
-2. Start Codex again.
+- **First confirm the config was saved** (the script prints `[OK] ... configured`).
+  Do not report an MCP setup failure just because a process could not be closed.
+- **If the script ran inside Codex** (e.g. you launched it from this session), it
+  will say it cannot close the Codex app itself. Tell the user to **fully quit all
+  Codex windows manually**, then restart. Do not claim Codex was closed
+  automatically.
+- **If the user ran `setup-didim-mcp.cmd` in a separate window**, the script lists
+  exact-match Codex processes and asks `[y/N]` (default No) before closing them.
+
+Then tell the user to:
+
+1. Fully quit all Codex windows (do this yourself if the script could not).
+2. Start the Codex app again.
 3. Run `/mcp` and confirm `didim-mcp` and its tools are listed.
 
 If tools still do not appear, have them re-run setup (verify the `dv_` key is

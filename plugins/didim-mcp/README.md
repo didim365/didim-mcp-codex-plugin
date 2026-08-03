@@ -39,7 +39,15 @@ Manual run (if the skill cannot launch it):
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\setup-didim-mcp.ps1"
 ```
 
-Then fully restart Codex and run `/mcp` to confirm `didim-mcp` and its tools.
+The config is saved regardless of process state. To reload it you must fully
+restart Codex — the plugin cannot reload live. When run in a **separate `.cmd`
+window**, the script offers to close exact-match `codex` processes (`[y/N]`,
+default No). When run **inside Codex**, it will not close the app itself and asks
+you to quit all Codex windows manually. It never closes its own process or
+ancestors. Default match is the exact ProcessName `codex` (no substring, no
+`gpt`). Options: `-SkipProcessKill`, `-KillWithoutConfirmation`, `-ProcessNames`.
+
+Then fully restart the Codex app and run `/mcp` to confirm `didim-mcp` and its tools.
 
 ## Remove
 
@@ -48,7 +56,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\remove-didim-mcp.
 ```
 
 Removes only the `[mcp_servers.didim-mcp]` block (a timestamped backup is created
-first). Other MCP servers and settings are preserved.
+first). Other MCP servers and settings are preserved. By default it does **not**
+touch any process (no prompt); pass `-KillCodexProcesses` to opt into closing
+exact-match `codex` processes. Restart Codex manually to apply.
 
 ## Safety
 
