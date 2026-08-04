@@ -16,6 +16,9 @@ description: >-
 Use this skill when a request calls for the Didim MCP server or one of its
 exposed tools, and the server is already configured.
 
+For MOLIT apartment trade or rent (전월세) real-transaction queries by district
+name and contract month, prefer the `molit-apartment-transactions` skill.
+
 ## If Didim MCP is not available
 
 If `didim-mcp` is not present under `/mcp`, or its tools are not exposed in the

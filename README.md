@@ -130,6 +130,35 @@ X-Didim-Vault-Api-Key = "<사용자가 입력한 dv_ API Key>"
 
 ---
 
+## 아파트 실거래가 조회 (국토교통부)
+
+지역명과 자연어 날짜만으로 국토교통부 아파트 **매매/전월세** 실거래가를 조회합니다.
+`LAWD_CD`, `DEAL_YMD`, 10자리 법정동코드, serviceKey를 직접 입력할 필요가 없습니다
+(`molit-apartment-transactions` Skill이 자동 적용).
+
+예시 요청:
+```
+구로구 작년 7월 아파트 매매 실거래가 알려줘
+구로구 작년 7월 아파트 전월세 실거래가 알려줘
+서울 중구 2025년 7월 전세 거래 조회해줘
+마포구 지난달 월세 거래 알려줘
+종로구 작년 12월 매매와 전월세를 모두 비교해줘
+```
+
+내부 처리 흐름:
+```
+지역명 → 법정동코드 Tool 조회 → 활성 시군구 대표 코드 선택
+       → 앞 5자리 LAWD_CD 추출 → 날짜를 DEAL_YMD(YYYYMM)로 변환
+       → 매매 Tool 또는 전월세 Tool 호출
+```
+
+필요한 MCP Tool (조회하려는 거래 유형에 맞게 **Didim 사용자 포털에서 활성화** 후 Codex 재시작):
+- 국토교통부 법정동코드 조회 (`odcloud__get_legal_dong_codes`) — 항상 필요
+- 국토교통부 아파트 매매 실거래가 조회 (`molit-apt-trade__get_apt_trade_real_transactions`) — 매매
+- 국토교통부 아파트 전월세 실거래가 조회 (`molit-apt-rent__get_apt_rent_real_transactions`) — 전월세
+
+---
+
 ## 저장소 구조
 
 ```
@@ -145,7 +174,8 @@ X-Didim-Vault-Api-Key = "<사용자가 입력한 dv_ API Key>"
 │   │   └── remove-didim-mcp.cmd
 │   └── skills/
 │       ├── didim-mcp-setup/SKILL.md          # 최초 설정 · 문제 해결 (자동 선택)
-│       └── didim-mcp-usage/SKILL.md          # 안전 사용 (자동 선택)
+│       ├── didim-mcp-usage/SKILL.md          # 안전 사용 (자동 선택)
+│       └── molit-apartment-transactions/SKILL.md  # 국토교통부 아파트 실거래가 조회 (자동 선택)
 ├── .gitignore
 └── README.md
 ```
@@ -232,3 +262,4 @@ Copy-Item "$env:USERPROFILE\.codex\config.toml.backup-YYYYMMDD-HHmmss" "$env:USE
 - 플러그인 문서: [`plugins/didim-mcp/README.md`](plugins/didim-mcp/README.md)
 - 최초 설정 Skill: [`plugins/didim-mcp/skills/didim-mcp-setup/SKILL.md`](plugins/didim-mcp/skills/didim-mcp-setup/SKILL.md)
 - 안전 사용 Skill: [`plugins/didim-mcp/skills/didim-mcp-usage/SKILL.md`](plugins/didim-mcp/skills/didim-mcp-usage/SKILL.md)
+- 아파트 실거래가 Skill: [`plugins/didim-mcp/skills/molit-apartment-transactions/SKILL.md`](plugins/didim-mcp/skills/molit-apartment-transactions/SKILL.md)

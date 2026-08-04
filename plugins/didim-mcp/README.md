@@ -3,8 +3,9 @@
 This plugin connects Codex to the Didim MCP server. It **does not register an MCP
 server by itself.** Instead it ships:
 
-- **Skills** — `didim-mcp-setup` (first-time setup & troubleshooting) and
-  `didim-mcp-usage` (safe usage).
+- **Skills** — `didim-mcp-setup` (first-time setup & troubleshooting),
+  `didim-mcp-usage` (safe usage), and `molit-apartment-transactions` (MOLIT
+  apartment trade/rent real-transaction queries by district name + month).
 - **Scripts** — `scripts/setup-didim-mcp.ps1` / `.cmd` and
   `scripts/remove-didim-mcp.ps1` / `.cmd`.
 
@@ -56,6 +57,25 @@ re-runs the **same** setup script — no reinstall, no remove first. It auto-det
 the existing `[mcp_servers.didim-mcp]` block, backs up `config.toml`, and replaces
 only the key. Enter the new `dv_` key in the hidden prompt. If you cancel or the
 key is invalid, the existing config is left unchanged. Restart Codex to apply.
+
+## Apartment real-transaction queries (MOLIT)
+
+Ask by district name + natural-language month; no `LAWD_CD`, `DEAL_YMD`, 10-digit
+legal-dong code, or `serviceKey` needed. The `molit-apartment-transactions` skill
+resolves the code via `odcloud__get_legal_dong_codes`, derives `LAWD_CD` (first 5
+digits) and `DEAL_YMD` (`YYYYMM`), and calls the trade or rent tool.
+
+```
+구로구 작년 7월 아파트 매매 실거래가 알려줘
+구로구 작년 7월 아파트 전월세 실거래가 알려줘
+서울 중구 2025년 7월 전세 거래 조회해줘
+마포구 지난달 월세 거래 알려줘
+종로구 작년 12월 매매와 전월세를 모두 비교해줘
+```
+
+Enable the matching tools in the Didim user portal, then restart Codex:
+국토교통부 법정동코드 조회 (always) · 국토교통부 아파트 매매 실거래가 조회 (trade)
+· 국토교통부 아파트 전월세 실거래가 조회 (rent).
 
 ## Remove
 
