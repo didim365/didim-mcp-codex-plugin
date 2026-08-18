@@ -22,8 +22,10 @@ Didim MCP 설정해줘
 
 The `didim-mcp-setup` skill explains what happens and, after your approval, runs
 the setup script. You enter your personal `dv_...` API key in a **hidden
-PowerShell prompt** (never in chat). The script writes this block into your
-`~/.codex/config.toml`, preserving all other settings:
+PowerShell prompt** (never in chat). Nothing on disk changes until the key passes
+`^dv_[A-Za-z0-9_-]{8,}$` validation; only then does the script create
+`~/.codex` (if missing), take a timestamped `config.toml` backup, and write this
+block as UTF-8 without BOM, preserving all other settings and their order:
 
 ```toml
 [mcp_servers.didim-mcp]
@@ -93,5 +95,9 @@ exact-match `codex` processes. Restart Codex manually to apply.
 - Read-only operations first; approval required before changes or high-risk actions.
 - API keys, tokens, and credentials are never echoed or logged.
 - The real API key is never stored in this repository — only in your local
-  `config.toml`.
+  `config.toml`, where it sits **in plaintext** (the same level as configuring an
+  MCP header by hand).
+- The MCP endpoint is plain HTTP over an IP address, with no TLS, so the
+  `X-Didim-Vault-Api-Key` header is sent unencrypted. Use it only on a trusted
+  machine and network.
 - MCP execution results are kept distinct from model analysis.

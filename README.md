@@ -1,7 +1,7 @@
 # Didim MCP — Codex Plugin
 
 Codex CLI에서 **Didim MCP 서버**를 쉽게 설정하고 안전하게 사용하기 위한 플러그인입니다.
-플러그인은 **MCP 서버를 직접 등록하지 않습니다.** 대신 두 개의 Skill과 설정 스크립트를 배포하고,
+플러그인은 **MCP 서버를 직접 등록하지 않습니다.** 대신 세 개의 Skill과 설정 스크립트를 배포하고,
 사용자가 "Didim MCP 설정해줘"라고 요청하면 Skill이 스크립트 실행을 제안해
 개인 API Key를 사용자의 `~/.codex/config.toml`에 안전하게 기록합니다.
 
@@ -81,16 +81,24 @@ Skill이 스크립트를 실행하지 못하는 경우, 설치된 플러그인 �
   powershell -NoProfile -ExecutionPolicy Bypass -File ".\plugins\didim-mcp\scripts\setup-didim-mcp.ps1"
   ```
 
-스크립트가 자동으로 하는 일: `~/.codex` 및 `config.toml` 생성(없으면) → 변경 전 타임스탬프 백업 →
-`dv_` 형식 검증 → `[mcp_servers.didim-mcp]` 블록만 추가/교체(다른 설정 보존) → UTF-8 저장.
-여러 번 실행해도 `didim-mcp` 블록은 하나만 유지됩니다(멱등). **설정 저장은 프로세스 종료 성공 여부와 무관하게 먼저 완료됩니다.**
+스크립트가 자동으로 하는 일 (실제 실행 순서):
+
+```
+config.toml 읽기 → 기존 didim-mcp 블록 탐지 → dv_ 키 숨김 입력 → 형식 검증 → 새 내용 조립
+   ──── 여기까지 파일을 전혀 건드리지 않습니다 ────
+→ ~/.codex 디렉터리 생성(없으면) → 타임스탬프 백업 → [mcp_servers.didim-mcp] 블록만
+   추가/교체(다른 설정 보존·순서 유지) → UTF-8(BOM 없음)으로 저장
+```
+
+**검증을 통과하기 전에는 디렉터리 생성·백업·쓰기가 일어나지 않습니다.** 여러 번 실행해도
+`didim-mcp` 블록은 하나만 유지됩니다(멱등). **설정 저장은 프로세스 종료 성공 여부와 무관하게 먼저 완료됩니다.**
 
 > **프로세스 종료 (setup):** 기본 매칭은 **정확히 일치하는 ProcessName `codex`뿐**입니다(부분 문자열 매칭 없음).
 > - **별도 `.cmd` 창에서 실행한 경우:** 종료 대상 목록을 보여주고 `[y/N]`(기본 **N**) 확인 후에만 종료합니다.
 > - **Codex 내부(Skill)에서 실행한 경우:** 현재 Codex 앱은 자동 종료할 수 없습니다. 스크립트는 종료를 시도하지 않고
 >   "모든 Codex 창을 직접 종료 후 재실행"을 안내합니다.
 > - 스크립트 자신의 프로세스와 모든 조상 PID는 **절대 종료하지 않습니다.**
-> - 옵션: `-SkipProcessKill`(프롬프트 생략), `-KillWithoutConfirmation`(확인 없이 종료 — 위험, 신뢰 환경에서만),
+> - 옵션: `-SkipProcessKill`(프로세스 종료 단계 자체를 생략), `-KillWithoutConfirmation`(확인 없이 종료 — 위험, 신뢰 환경에서만),
 >   `-ProcessNames @('codex')`(정확한 이름 커스터마이즈).
 >
 > **어떤 경우든 새 설정 반영에는 Codex 완전 재시작이 필요합니다.**
@@ -164,8 +172,8 @@ X-Didim-Vault-Api-Key = "<사용자가 입력한 dv_ API Key>"
 ```
 .
 ├── .agents/plugins/marketplace.json          # Marketplace 매니페스트 (name: didim)
-├── plugins/didim-mcp/
-│   ├── .codex-plugin/plugin.json             # 플러그인 매니페스트 (v0.1.0, MCP 서버 미등록)
+├── plugins/didim-mcp/                        # ← 사용자에게 설치되는 범위
+│   ├── .codex-plugin/plugin.json             # 플러그인 매니페스트 (버전 표기 · MCP 서버 미등록)
 │   ├── README.md
 │   ├── scripts/
 │   │   ├── setup-didim-mcp.ps1               # config.toml에 didim-mcp 설정 작성 (멱등)
@@ -173,16 +181,23 @@ X-Didim-Vault-Api-Key = "<사용자가 입력한 dv_ API Key>"
 │   │   ├── remove-didim-mcp.ps1              # didim-mcp 블록만 제거
 │   │   └── remove-didim-mcp.cmd
 │   └── skills/
-│       ├── didim-mcp-setup/SKILL.md          # 최초 설정 · 문제 해결 (자동 선택)
+│       ├── didim-mcp-setup/SKILL.md          # 최초 설정 · 키 교체 · 문제 해결 (자동 선택)
 │       ├── didim-mcp-usage/SKILL.md          # 안전 사용 (자동 선택)
 │       └── molit-apartment-transactions/SKILL.md  # 국토교통부 아파트 실거래가 조회 (자동 선택)
+├── CLAUDE.md                                 # 리포 작업용 에이전트 지시문 (배포 안 됨)
+├── .claude/rules/                            # 경로 스코프 작업 규칙 (배포 안 됨)
 ├── .gitignore
 └── README.md
 ```
 
+> 현재 플러그인 버전은 `plugins/didim-mcp/.codex-plugin/plugin.json`의 `version` 필드가
+> 기준입니다. (이 도식에 버전을 중복 표기하지 않습니다.)
+
 > 참고: 설정 스크립트는 **플러그인 내부**(`plugins/didim-mcp/scripts/`)에 위치합니다.
 > Codex는 플러그인 설치 시 플러그인 디렉터리만 배포하므로, Skill이 설치 후에도
 > 스크립트를 찾을 수 있으려면 스크립트가 플러그인 안에 있어야 합니다.
+> 같은 이유로 `CLAUDE.md`와 `.claude/rules/`는 설치본에 포함되지 않으며, 플러그인 동작에
+> 영향을 주지 않습니다.
 
 ---
 
@@ -237,6 +252,9 @@ Copy-Item "$env:USERPROFILE\.codex\config.toml.backup-YYYYMMDD-HHmmss" "$env:USE
 - 실제 `dv_` API Key를 **저장소/플러그인 파일에 커밋하지 마세요.** 이 저장소에는 키가 없습니다.
 - 키는 사용자 PC의 `~/.codex/config.toml`에 **평문**으로 저장됩니다(수동 MCP 헤더 등록과 동일 수준).
   공용 PC에서는 사용에 주의하세요.
+- MCP 엔드포인트는 **평문 HTTP + IP 직접 지정**(`http://49.50.138.22:31083/mcp/`)입니다.
+  TLS가 없으므로 `X-Didim-Vault-Api-Key` 헤더가 암호화되지 않은 채 전송됩니다.
+  신뢰할 수 있는 네트워크에서만 사용하세요.
 - 키는 **PowerShell 숨김 입력**으로만 받으며, 채팅창/명령행 인자/로그에 노출하지 않습니다.
 - Skill 규칙상 API Key·토큰·인증 헤더 등 비밀값은 응답에 그대로 노출하지 않습니다.
 - 읽기 전용 작업을 우선하고, 데이터 변경·고위험 작업은 사용자 승인 후 진행합니다.
