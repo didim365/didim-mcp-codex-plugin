@@ -46,7 +46,7 @@ try {
 catch { }
 
 # --- Fixed Didim MCP connection settings (do not change auth structure) ---
-$ServerUrl      = 'http://49.50.138.22:31083/mcp/'
+$ServerUrl      = 'https://didimmcp-dev.didimservice.com/mcp/'
 $StartupTimeout = 120
 $HeaderName     = 'X-Didim-Vault-Api-Key'
 

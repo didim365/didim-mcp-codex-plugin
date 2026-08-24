@@ -22,7 +22,7 @@ scripts/*.ps1 · SKILL.md · *.json 매니페스트   ← 실제 동작. 최우�
 ```
 
 README는 근거가 아니다. 루트 README의 저장소 구조 도식은 `plugin.json`을 `v0.1.0`으로
-적고 있으나 실제 버전은 `0.1.4`다. 충돌 시 소스를 따르고 사용자에게 알린다.
+적고 있으나 실제 버전은 `0.1.5`다. 충돌 시 소스를 따르고 사용자에게 알린다.
 
 ## Architecture
 
@@ -31,7 +31,8 @@ README는 근거가 아니다. 루트 README의 저장소 구조 도식은 `plug
 **설정 시점** — 사용자 발화 → `didim-mcp-setup` Skill이 description 매칭으로 선택 →
 사용자 승인 → `setup-didim-mcp.cmd`/`.ps1` → 키 검증 성공 이후에만 백업 → `config.toml` 병합 쓰기
 
-**런타임** — Codex 기동 → `config.toml`의 URL + `X-Didim-Vault-Api-Key` 헤더로 HTTP MCP 연결 →
+**런타임** — Codex 기동 → `config.toml`의 URL + `X-Didim-Vault-Api-Key` 헤더로 HTTPS MCP 연결
+(`https://didimmcp-dev.didimservice.com/mcp/`) →
 서버가 사용자별 활성 Tool만 노출 → Skill이 노출된 Tool만 사용
 
 Skill 선택은 코드가 아니라 **SKILL.md frontmatter의 `description`** 이 결정한다. 이 프로젝트에

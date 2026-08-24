@@ -5,7 +5,7 @@ Codex CLI에서 **Didim MCP 서버**를 쉽게 설정하고 안전하게 사용�
 사용자가 "Didim MCP 설정해줘"라고 요청하면 Skill이 스크립트 실행을 제안해
 개인 API Key를 사용자의 `~/.codex/config.toml`에 안전하게 기록합니다.
 
-- **MCP 서버 URL:** `http://49.50.138.22:31083/mcp/`
+- **MCP 서버 URL:** `https://didimmcp-dev.didimservice.com/mcp/`
 - **인증 헤더:** `X-Didim-Vault-Api-Key`
 - **개인 API Key 형식:** `dv_...`
 - **키 저장 위치:** 사용자 PC의 `~/.codex/config.toml` (평문, 수동 등록과 동일한 보안 수준)
@@ -106,7 +106,7 @@ config.toml 읽기 → 기존 didim-mcp 블록 탐지 → dv_ 키 숨김 입력 
 최종적으로 `config.toml`에 작성되는 형태:
 ```toml
 [mcp_servers.didim-mcp]
-url = "http://49.50.138.22:31083/mcp/"
+url = "https://didimmcp-dev.didimservice.com/mcp/"
 startup_timeout_sec = 120
 
 [mcp_servers.didim-mcp.http_headers]
@@ -252,9 +252,9 @@ Copy-Item "$env:USERPROFILE\.codex\config.toml.backup-YYYYMMDD-HHmmss" "$env:USE
 - 실제 `dv_` API Key를 **저장소/플러그인 파일에 커밋하지 마세요.** 이 저장소에는 키가 없습니다.
 - 키는 사용자 PC의 `~/.codex/config.toml`에 **평문**으로 저장됩니다(수동 MCP 헤더 등록과 동일 수준).
   공용 PC에서는 사용에 주의하세요.
-- MCP 엔드포인트는 **평문 HTTP + IP 직접 지정**(`http://49.50.138.22:31083/mcp/`)입니다.
-  TLS가 없으므로 `X-Didim-Vault-Api-Key` 헤더가 암호화되지 않은 채 전송됩니다.
-  신뢰할 수 있는 네트워크에서만 사용하세요.
+- MCP 엔드포인트는 **HTTPS**(`https://didimmcp-dev.didimservice.com/mcp/`)입니다. NCP host nginx 가 Wildcard 인증서
+  `*.didimservice.com` 로 TLS 를 종단하므로 `X-Didim-Vault-Api-Key` 헤더는 전송 구간에서
+  암호화됩니다. NodePort/IP 직접 접근(평문 HTTP)은 사용하지 마세요.
 - 키는 **PowerShell 숨김 입력**으로만 받으며, 채팅창/명령행 인자/로그에 노출하지 않습니다.
 - Skill 규칙상 API Key·토큰·인증 헤더 등 비밀값은 응답에 그대로 노출하지 않습니다.
 - 읽기 전용 작업을 우선하고, 데이터 변경·고위험 작업은 사용자 승인 후 진행합니다.
@@ -270,6 +270,7 @@ Copy-Item "$env:USERPROFILE\.codex\config.toml.backup-YYYYMMDD-HHmmss" "$env:USE
 | 설정했는데 안 보임 | Codex를 **완전히 재시작**했는지 확인 |
 | `No Didim MCP tools are exposed` | `Didim MCP 재설정` 요청으로 setup 재실행, `dv_` 키가 유효/최신인지 확인 |
 | 인증 실패 | `config.toml`의 `X-Didim-Vault-Api-Key` 값이 올바른 개인 `dv_` 키인지 확인 |
+| 예전 `http://49.50.138.22:31083/mcp/` 로 붙어 있음 | 0.1.4 이하로 설정한 사용자입니다. **플러그인을 0.1.5 이상으로 업데이트한 뒤 `Didim MCP 재설정`** 을 요청하면 HTTPS URL 로 바뀝니다 |
 | 설치가 안 됨 | 플러그인 화면에 **Didim** 마켓플레이스가 추가됐는지 확인 (CLI 사용자는 `codex plugin marketplace list`) |
 | 스크립트 실행 시 한글이 `??`/깨져서 나옴 | Windows PowerShell 5.1의 UTF-8 처리 문제입니다. **플러그인을 최신 버전(0.1.3 이상)으로 업데이트**하세요. 스크립트가 UTF-8 BOM + `chcp 65001` + 콘솔 인코딩을 적용해 한글을 정상 출력합니다. |
 

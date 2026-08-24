@@ -29,7 +29,7 @@ block as UTF-8 without BOM, preserving all other settings and their order:
 
 ```toml
 [mcp_servers.didim-mcp]
-url = "http://49.50.138.22:31083/mcp/"
+url = "https://didimmcp-dev.didimservice.com/mcp/"
 startup_timeout_sec = 120
 
 [mcp_servers.didim-mcp.http_headers]

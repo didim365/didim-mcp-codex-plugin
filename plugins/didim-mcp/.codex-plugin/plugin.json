@@ -1,6 +1,6 @@
 {
   "name": "didim-mcp",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Codex plugin that ships Didim MCP setup/usage skills and helper scripts. It does not register an MCP server itself; the setup script writes the server config into the user's config.toml.",
   "author": {
     "name": "Didim365"
