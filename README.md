@@ -50,6 +50,33 @@ codex mcp list                # Auth 열이 "Logged in" 인지 확인
 
 ---
 
+## 연결 · 계정 관리 (자연어로 요청)
+
+아래는 **새 채팅에서 자연어로** 요청하면 `didim-mcp-connect` Skill이 상태를 확인하고 처리합니다.
+플러그인을 지우고 다시 설치할 필요가 없습니다.
+
+| 하고 싶은 것 | 이렇게 말하면 됩니다 |
+| --- | --- |
+| 설치할 때 뜬 로그인 창을 닫았음 | `아까 로그인 창 닫았는데 다시 로그인해줘` |
+| 연결이 안 된 것 같음 | `Didim MCP 연결해줘` |
+| 지금 로그인된 계정 확인 | `지금 Didim MCP 누구로 로그인돼있어?` |
+| 다른 Microsoft 계정으로 변경 | `Didim MCP 다른 Microsoft 계정으로 로그인해줘` |
+| 인증 만료 · 401 오류 | `Didim MCP 다시 인증해줘` |
+
+**설치 중 로그인 창을 닫아도 플러그인은 정상 설치된 상태입니다.** 등록(registration)과
+로그인(sign-in)은 별개이므로, 삭제·재설치 없이 **Connect만 다시 누르면** 됩니다.
+Codex CLI를 별도 설치한 사용자는 `codex mcp login didim-mcp` / `codex mcp logout didim-mcp`를
+사용할 수 있습니다. 인증 상태를 바꾸는 명령이므로 Skill이 실행 전에 설명하고 승인을 받습니다.
+
+계정을 바꿀 때 브라우저에 기존 Microsoft SSO 세션이 남아 있으면 같은 계정으로 자동
+로그인될 수 있습니다. 그럴 때는 Microsoft 로그인 화면에서 **"다른 계정으로 로그인"** 을
+선택하세요.
+
+> Skill 자동 선택은 표현에 따라 달라질 수 있습니다. 100% 보장되지는 않으며, 자동으로 잡히지
+> 않으면 Codex 앱의 플러그인 화면에서 **Connect / Disconnect** 를 직접 사용하면 됩니다.
+
+---
+
 ## 0.1.x에서 업그레이드하는 기존 사용자 (필수)
 
 0.1.x 플러그인은 사용자의 `~/.codex/config.toml`에 다음과 같은 블록을 기록했습니다.
@@ -252,10 +279,12 @@ codex plugin remove didim-mcp@didim
 | 증상 | 확인 / 조치 |
 | --- | --- |
 | 설치했는데 `/mcp`에 `didim-mcp`가 없음 | Codex를 **완전히 재시작**하고 **새 채팅**을 여세요. 플러그인 제공 MCP는 기동 시점에 반영됩니다 |
+| 설치 중 로그인 창을 닫았음 | **재설치하지 마세요.** 새 채팅에서 `Didim MCP 연결해줘` 또는 플러그인 화면의 **Connect** |
+| 지금 로그인된 계정을 모르겠음 | `지금 Didim MCP 누구로 로그인돼있어?` — 로그인 상태면 계정·role·상태를 알려줍니다 |
 | Connect 버튼이 안 보임 | 플러그인이 설치·활성 상태인지 확인 → Codex 재시작. 그래도 없으면 아래 "예전 설정" 항목 |
 | 업그레이드 후 인증이 계속 실패함 | 0.1.x가 남긴 `[mcp_servers.didim-mcp]`가 플러그인 설정을 가리고 있습니다. `migrate-didim-mcp.cmd` 실행 후 재시작 → Connect |
 | 예전 `X-Didim-Vault-Api-Key` / `http://49.50.138.22:31083/mcp/` 로 붙어 있음 | 같은 원인입니다. 위 정리 스크립트를 실행하세요 |
-| OAuth 로그인 창에서 다른 계정으로 로그인하고 싶음 | Microsoft 로그인 화면에서 **"다른 계정으로 로그인"** 을 선택하세요 |
+| 다른 Microsoft 계정으로 바꾸고 싶음 | `Didim MCP 다른 Microsoft 계정으로 로그인해줘` → Disconnect 후 Connect. 같은 계정으로 자동 로그인되면 Microsoft 화면에서 **"다른 계정으로 로그인"** 선택 |
 | 연결은 됐는데 특정 Tool이 없음 | 인증 문제가 아닙니다. **Didim 사용자 포털에서 해당 Tool을 활성화**한 뒤 Codex 재시작 |
 | 한동안 쓰다가 갑자기 인증 실패 | Codex가 refresh를 시도합니다. 실패하면 Disconnect → Connect |
 | 설치가 안 됨 | 플러그인 화면에 **Didim** 마켓플레이스가 추가됐는지 확인 (CLI 사용자는 `codex plugin marketplace list`) |

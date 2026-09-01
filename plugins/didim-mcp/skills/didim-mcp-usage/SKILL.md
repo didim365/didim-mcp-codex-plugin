@@ -7,8 +7,9 @@ description: >-
   logs, ports, or service health via Didim; perform a task with a Didim resource
   or MCP tool; or says things like "didim-mcp로 확인해줘" or names a specific
   Didim tool. Prioritizes read-only lookups and requires approval before changes
-  or high-risk actions. If Didim MCP is not exposed under /mcp, defer to the
-  didim-mcp-connect skill instead of retrying blindly.
+  or high-risk actions. This skill does not handle authentication: connecting,
+  reconnecting, sign-in failures, checking the currently signed-in account, and
+  switching Microsoft accounts all belong to the didim-mcp-connect skill.
 ---
 
 # Didim MCP Usage
@@ -19,16 +20,23 @@ exposed tools, and the server is already connected.
 For MOLIT apartment trade or rent (전월세) real-transaction queries by district
 name and contract month, prefer the `molit-apartment-transactions` skill.
 
+## Authentication is not this skill's job
+
+Delegate to **didim-mcp-connect** — do not handle it here — whenever the request
+is about connecting, reconnecting, a cancelled or expired sign-in, an auth
+error, which account is currently signed in, or switching Microsoft accounts.
+Suggest the user say "Didim MCP 연결해줘". Never ask for an API key, token, or
+auth header, and never run a login/logout command from this skill.
+
 ## If Didim MCP is not available
 
 If `didim-mcp` is not present under `/mcp`, or its tools are not exposed in the
 current session:
 
 - Do **not** repeatedly retry the same failing call or invent a fallback.
-- Tell the user the server/tools are not currently exposed and point them to the
-  **didim-mcp-connect** skill (e.g. suggest they say "Didim MCP 연결해줘"). Didim
-  MCP signs in with a Microsoft account through the plugin's Connect action;
-  never ask for an API key, token, or auth header.
+- Distinguish the two causes: an **auth** problem (delegate as above) versus a
+  **portal entitlement** problem — a single missing tool while other Didim tools
+  work means the user must enable it in the Didim portal and restart Codex.
 
 ## Rules
 

@@ -24,7 +24,14 @@ paths:
 - Skill은 **자격증명을 요구·수집·출력하지 않는다.** API Key 입력, `dv_` 키, 토큰 붙여넣기,
   헤더 설정, MCP URL 직접 입력을 안내하는 문장을 넣지 않는다. 연결은 플러그인의 Connect →
   Microsoft 로그인 → Didim 동의로만 이루어지며 Codex가 수행한다.
-- 인증 실패 안내의 종착점은 항상 `didim-mcp-connect` Skill(= Connect 재시도)이다.
+- 인증 실패 안내의 종착점은 항상 `didim-mcp-connect` Skill(= Connect 재시도)이다. 로그인 계정
+  조회·계정 변경·취소된 로그인 재시도도 전부 `didim-mcp-connect` 소관이며, 다른 Skill은 위임만
+  한다.
+- **재설치를 기본 처방으로 쓰지 않는다.** 취소된 로그인·만료된 세션·미노출 Tool은 재설치 없이
+  해결된다(검증됨: 로그인 중단 후에도 등록이 유지되고 재시도가 동작한다). 플러그인 자체가
+  없거나 캐시가 손상된 근거가 있을 때만 재설치를 제안한다.
+- `codex mcp login` / `codex mcp logout`은 인증 상태를 바꾸므로 실행 전 설명하고 승인받는다.
+  조회(`codex mcp list`, 프로필 Tool)는 read-only다.
 - Skill이 `~/.codex/config.toml`을 읽거나 쓰도록 지시하지 않는다. 유일한 예외는
   `didim-mcp-connect`가 0.1.x 레거시 블록 정리 스크립트 실행을 **승인받아** 제안하는 경우다.
 
@@ -33,7 +40,10 @@ paths:
 - Tool 이름은 **정확한 문자열 그대로** 적는다. 추측·축약·대체하지 않는다.
   현재 참조되는 것은 `odcloud__get_legal_dong_codes`,
   `molit-apt-trade__get_apt_trade_real_transactions`,
-  `molit-apt-rent__get_apt_rent_real_transactions` 셋뿐이다.
+  `molit-apt-rent__get_apt_rent_real_transactions`,
+  그리고 신원 조회용 `didim-mcp-auth__get_current_user_profile` ·
+  `didim-vault__get_current_user_profile` 다섯이다. 신원 조회는 둘 중 **노출된 쪽**을 쓰고,
+  둘 다 없으면 포털 권한 문제로 안내하고 중단한다.
 - Didim MCP는 사용자가 포털에서 활성화한 Tool만 노출한다. 사용 전에 `tools/list`로 존재를
   확인하고, 없으면 즉시 중단 + 포털 활성화 안내로 끝낸다. 우회 경로·대체 엔드포인트를
   만들어내지 않는다.

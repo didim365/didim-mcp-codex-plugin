@@ -36,7 +36,28 @@ If Connect is not offered, ask Codex in a new chat:
 Didim MCP 연결해줘
 ```
 
-The `didim-mcp-connect` skill diagnoses the cause and walks through the fix.
+The `didim-mcp-connect` skill checks the actual state and walks through the fix.
+
+### Closed the sign-in window? Do not reinstall
+
+Installing opens the Microsoft sign-in. Closing or cancelling it leaves the
+plugin installed and the MCP server registered — registration and sign-in are
+separate. Just start the sign-in again: **Connect**, or ask in a new chat.
+
+### Account management, in natural language
+
+| Intent | Say |
+| --- | --- |
+| Retry an abandoned sign-in | `아까 로그인 창 닫았는데 다시 로그인해줘` |
+| Check the signed-in account | `지금 Didim MCP 누구로 로그인돼있어?` |
+| Switch Microsoft account | `Didim MCP 다른 Microsoft 계정으로 로그인해줘` |
+| Re-authenticate after expiry | `Didim MCP 다시 인증해줘` |
+
+Users of the standalone `codex` CLI can run `codex mcp login didim-mcp` and
+`codex mcp logout didim-mcp`; the skill explains and asks for approval first,
+since both change authentication state. Skill auto-selection depends on
+phrasing and is not guaranteed — Connect/Disconnect in the plugin screen is
+always available as a fallback.
 
 ## Upgrading from 0.1.x — required once
 
