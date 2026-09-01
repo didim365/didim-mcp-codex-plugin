@@ -5,8 +5,17 @@ paths:
 
 # PowerShell / CMD 스크립트 규칙
 
-대상: `setup-didim-mcp.ps1`, `remove-didim-mcp.ps1`, 각 `.cmd` 런처.
-이 스크립트들은 사용자의 실제 `~/.codex/config.toml`을 수정한다. 되돌리기 어려운 코드다.
+대상: `migrate-didim-mcp.ps1`, `migrate-didim-mcp.cmd`.
+이 스크립트는 사용자의 실제 `~/.codex/config.toml`을 수정한다. 되돌리기 어려운 코드다.
+
+## 이 스크립트의 유일한 역할
+
+0.1.x가 남긴 레거시 `[mcp_servers.didim-mcp]` / `[mcp_servers.didim-mcp.*]` 블록 제거.
+그 블록이 남아 있으면 `plugin.json`이 선언한 OAuth MCP 서버를 **가려서**(shadow) Connect가
+동작하지 않는다(검증됨: 블록이 있으면 `codex mcp list`에 플러그인 서버가 아예 나오지 않는다).
+
+여기에 **MCP 서버 등록 기능을 다시 넣지 않는다.** 등록은 `plugin.json`의 `mcpServers`가 한다.
+**자격증명 입력 기능도 다시 넣지 않는다.** 인증은 Codex OAuth가 한다.
 
 ## 실행 환경
 
@@ -19,9 +28,9 @@ paths:
 
 ## 인코딩 (회귀 이력 있음 — commit a88f99e)
 
-- `.ps1` 2개는 **UTF-8 BOM(`ef bb bf`)으로 저장**한다. BOM이 없으면 PS 5.1이 파일을 ANSI로
-  읽어 스크립트 안의 한글 문자열이 깨진다. 편집 후 `head -c3 <file> | od -An -tx1`로 확인한다.
-- `.cmd` 2개에는 BOM을 넣지 않는다. 대신 첫 줄들에 `chcp 65001 >nul`을 유지한다.
+- `.ps1`은 **UTF-8 BOM(`ef bb bf`)으로 저장**한다. BOM이 없으면 PS 5.1이 파일을 ANSI로 읽어
+  스크립트 안의 한글 문자열이 깨진다. 편집 후 `head -c3 <file> | od -An -tx1`로 확인한다.
+- `.cmd`에는 BOM을 넣지 않는다. 대신 첫 줄들에 `chcp 65001 >nul`을 유지한다.
 - `.ps1` 선두의 `[Console]::InputEncoding/OutputEncoding/$OutputEncoding` 설정 블록과 이를 감싼
   `try { } catch { }`를 제거하지 않는다. 인코딩 설정 실패가 스크립트를 중단시키면 안 된다.
 - 사용자 `config.toml`은 **BOM 없는 UTF-8**로 쓴다(`New-Object System.Text.UTF8Encoding($false)`).
@@ -29,21 +38,20 @@ paths:
 
 ## config.toml 수정 순서 (불변)
 
-이 순서가 "잘못된 키를 넣어도 기존 설정이 살아남는다"는 보증의 전부다. 재배치하지 않는다.
-
 ```
-읽기 → 기존 블록 탐지 → 숨김 입력 → 형식 검증 → 새 내용 문자열 생성
+읽기 → 레거시 블록 탐지 → 없으면 변경 없이 exit 0
   ──── 여기까지 파일시스템 미변경 ────
-→ 디렉터리 생성 → 타임스탬프 백업 → 쓰기 → 메모리 정리
+→ 타임스탬프 백업 → 블록 제거한 내용 쓰기 → 메모리 정리
 ```
 
-- 검증 실패는 `Write-Error` + `exit 1`이며, 그 전에 백업·디렉터리 생성·쓰기가 있어서는 안 된다.
 - 쓰기 전 `config.toml.backup-yyyyMMdd-HHmmss` 백업을 항상 만든다.
 - `Remove-DidimBlock`은 `[mcp_servers.didim-mcp]` 및 `[mcp_servers.didim-mcp.*]` 테이블만
   제거하고 다른 줄의 내용과 순서를 보존한다. TOML 파서를 도입하지 말고 이 라인 스캔 방식을
-  유지한다(의존성 없음이 요구사항이다).
-- 멱등성: 여러 번 실행해도 `didim-mcp` 블록은 정확히 하나만 남아야 한다.
-- 생성 블록은 CRLF(`` "`r`n" ``)로 조립한다.
+  유지한다(의존성 없음이 요구사항이다). 하위 테이블을 통째로 지우므로 `http_headers`,
+  `env_http_headers`, `bearer_token_env_var` 가 함께 사라진다 — 개별 키를 골라 지우지 않는다.
+- 멱등성: 여러 번 실행해도 결과가 같아야 하고, 두 번째 실행은 아무것도 바꾸지 않아야 한다.
+- 남은 내용은 CRLF(`` "`r`n" ``)로 조립한다.
+- 레거시 키 값을 파싱·비교·출력하지 않는다. `legacy credential removed` 수준만 알린다.
 
 ## 프로세스 종료
 
@@ -53,13 +61,11 @@ paths:
   제거하지 않는다.
 - Codex 내부에서 실행된 경우(조상에 대상 프로세스 존재)에는 종료를 **시도하지 않고** 수동 종료를
   안내한다.
-- 기본 확인 프롬프트는 `[y/N]`이며 기본값은 **No**다.
-- setup은 종료를 제안하고(`-SkipProcessKill`로 끔), remove는 기본적으로 아무 프로세스도 건드리지
-  않는다(`-KillCodexProcesses`로 옵트인). 이 비대칭을 임의로 통일하지 않는다.
-- 프로세스 종료 단계의 예외는 `try/catch`로 삼킨다. 이미 저장된 설정 결과를 실패로 만들지 않는다.
+- 기본은 **아무 프로세스도 건드리지 않는다**(`-KillCodexProcesses`로 옵트인). 옵트인했을 때의
+  확인 프롬프트는 `[y/N]`이며 기본값은 **No**다.
+- 프로세스 종료 단계의 예외는 `try/catch`로 삼킨다. 이미 저장된 결과를 실패로 만들지 않는다.
 
 ## 출력
 
-- 성공 메시지는 `[OK]`로 시작한다. 키 값은 어떤 경로로도 출력하지 않는다.
-- 마지막에 "Codex 완전 종료 → 재시작 → `/mcp` 확인" 3단계 안내를 유지한다. 설정은 저장돼도
-  재시작 전에는 반영되지 않는다.
+- 성공 메시지는 `[OK]`로 시작한다. 자격증명 값은 어떤 경로로도 출력하지 않는다.
+- 마지막에 "Codex 완전 종료 → 재시작 → **Connect** → `/mcp` 확인" 안내를 유지한다.

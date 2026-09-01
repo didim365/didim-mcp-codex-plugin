@@ -1,147 +1,98 @@
 # Didim MCP — Codex Plugin
 
-Codex CLI에서 **Didim MCP 서버**를 쉽게 설정하고 안전하게 사용하기 위한 플러그인입니다.
-플러그인은 **MCP 서버를 직접 등록하지 않습니다.** 대신 세 개의 Skill과 설정 스크립트를 배포하고,
-사용자가 "Didim MCP 설정해줘"라고 요청하면 Skill이 스크립트 실행을 제안해
-개인 API Key를 사용자의 `~/.codex/config.toml`에 안전하게 기록합니다.
+Codex에서 **Didim MCP 서버**를 Microsoft 계정으로 연결해 사용하는 플러그인입니다.
 
-- **MCP 서버 URL:** `https://didimmcp-dev.didimservice.com/mcp/`
-- **인증 헤더:** `X-Didim-Vault-Api-Key`
-- **개인 API Key 형식:** `dv_...`
-- **키 저장 위치:** 사용자 PC의 `~/.codex/config.toml` (평문, 수동 등록과 동일한 보안 수준)
+플러그인이 매니페스트에서 Hosted MCP 서버를 직접 선언하고, **로그인은 Codex의 MCP OAuth
+기능이 처리**합니다. 사용자가 API Key를 발급받거나, 붙여넣거나, `config.toml`을 손대는 단계는
+없습니다.
 
-> 실제 `dv_` API Key는 이 저장소나 플러그인 파일에 절대 포함되지 않습니다.
-> 키는 각 사용자의 로컬 `config.toml`에만 저장됩니다.
+- **MCP 서버 URL:** `https://didimmcp-dev.didimservice.com/mcp` (Streamable HTTP)
+- **인증:** OAuth 2.1 (Microsoft Entra 로그인 → Didim OAuth 동의) — Codex가 수행
+- **사용자가 입력하는 자격증명:** 없음
 
----
-
-## 왜 설정 요청이 필요한가
-
-Codex Plugin에는 설치 직후 자동으로 API Key를 입력받는 범용 post-install Hook이 없습니다.
-따라서 **플러그인 설치만으로는 API Key가 등록되지 않습니다.** 설치 후 새 채팅에서
-`Didim MCP 설정해줘` 라고 명시적으로 요청하면, `didim-mcp-setup` Skill이 감지하여
-설정 스크립트 실행을 **사용자 승인 후** 진행합니다.
+> 이 저장소에도, 배포되는 플러그인 파일에도 사용자 자격증명은 존재하지 않습니다.
+> 토큰은 Codex가 자체 자격증명 저장소에 보관합니다.
 
 ---
 
-## 사용자 설치 · 설정 흐름 (Codex Windows 앱)
-
-Codex Windows 앱의 화면 UI만으로 설치합니다. (별도 명령어 입력이 필요 없습니다.)
+## 설치 · 연결 (Codex 앱)
 
 1. **Codex 앱**을 실행합니다.
 2. 왼쪽에서 **플러그인**을 선택합니다.
-3. **만들기**를 클릭합니다.
-4. **마켓플레이스 추가**를 선택합니다.
-5. **출처**에 다음을 입력합니다.
+3. **만들기 → 마켓플레이스 추가**를 선택합니다.
+4. **출처**에 다음을 입력합니다.
    ```
    https://github.com/didim365/didim-mcp-codex-plugin.git
    ```
-6. **Git ref**와 **Sparse 경로**는 비워 둡니다.
-7. **마켓플레이스 추가**를 클릭합니다.
-8. 마켓플레이스 목록에서 **Didim MCP**를 **설치**합니다.
-9. **새 채팅**에서 다음과 같이 요청합니다.
-   ```
-   Didim MCP 설정해줘
-   ```
-   `didim-mcp-setup` Skill이 다음을 안내합니다: 개인 API Key 입력 필요 · `config.toml` 자동 백업 및 수정 ·
-   키는 이 PC의 `config.toml`에 평문 저장(수동 등록과 동일 수준).
-10. **스크립트 실행 승인** — Skill이 제안하는 설정 스크립트 실행을 승인합니다.
-11. **개인 `dv_...` Key 입력** — 별도 PowerShell 창에서 **숨김 입력**으로 키를 입력합니다.
-    (채팅창에 붙여넣지 않습니다.)
-12. **Codex 완전 종료 후 재실행** — 설정은 이미 저장되었지만, 반영하려면 Codex를 완전히 종료 후 다시 실행해야 합니다.
-    (일부 환경은 즉시 재시작 시 설정이 반영되지 않습니다. 프로세스 종료 동작은 아래 "프로세스 종료" 참고.)
-13. **`/mcp` 확인** — `didim-mcp` 서버와 노출된 도구를 확인합니다.
-14. **일반 질문 시 자동 적용** — 이후 Didim 관련 질문에서 `didim-mcp-usage` Skill이 자동 적용됩니다.
+5. **Git ref**와 **Sparse 경로**는 비워 두고 **마켓플레이스 추가**를 클릭합니다.
+6. 마켓플레이스 목록에서 **Didim MCP**를 **설치**합니다.
+7. **Connect(연결)** 를 누릅니다. 브라우저가 열립니다.
+8. **Microsoft 계정으로 로그인**하고, **Didim 동의 화면**을 승인합니다.
+9. Codex를 새로 시작하고 **새 채팅**에서 `/mcp`로 `didim-mcp` 연결을 확인합니다.
+10. 이후 Didim 관련 질문에는 `didim-mcp-usage` / `molit-apartment-transactions`
+    Skill이 자동 적용됩니다.
+
+연결이 안 보이거나 실패하면 새 채팅에서 `Didim MCP 연결해줘` 라고 요청하세요.
+`didim-mcp-connect` Skill이 원인별 조치를 안내합니다.
 
 ### (선택) Codex CLI 사용자
 
-Codex CLI를 **별도로 설치**한 사용자만 터미널에서 아래 명령을 사용합니다.
+`codex` CLI를 **별도로 설치**한 경우에만 사용합니다.
 
 ```bash
 codex plugin marketplace add https://github.com/didim365/didim-mcp-codex-plugin.git
 codex plugin add didim-mcp@didim
+codex mcp login didim-mcp     # 브라우저가 열리고 Microsoft 로그인 진행
+codex mcp list                # Auth 열이 "Logged in" 인지 확인
 ```
 
-이후 새 채팅에서 `Didim MCP 설정해줘` 로 위 9번 이후 흐름과 동일하게 진행합니다.
-
-> 위 CLI 절차는 `codex` CLI를 직접 설치한 경우에만 사용합니다.
 > **Windows Store로 설치한 Codex 앱 내부의 `codex.exe`를 직접 실행하지 마세요.**
-
-### 수동 실행 (대체 절차)
-
-Skill이 스크립트를 실행하지 못하는 경우, 설치된 플러그인 폴더의 스크립트를 직접 실행합니다.
-
-- 더블클릭: `%USERPROFILE%\.codex\plugins\cache\didim\didim-mcp\<version>\scripts\setup-didim-mcp.cmd`
-- 또는 PowerShell:
-  ```powershell
-  powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\plugins\cache\didim\didim-mcp\<version>\scripts\setup-didim-mcp.ps1"
-  ```
-- 저장소를 clone 한 경우 리포 안에서 직접:
-  ```powershell
-  powershell -NoProfile -ExecutionPolicy Bypass -File ".\plugins\didim-mcp\scripts\setup-didim-mcp.ps1"
-  ```
-
-스크립트가 자동으로 하는 일 (실제 실행 순서):
-
-```
-config.toml 읽기 → 기존 didim-mcp 블록 탐지 → dv_ 키 숨김 입력 → 형식 검증 → 새 내용 조립
-   ──── 여기까지 파일을 전혀 건드리지 않습니다 ────
-→ ~/.codex 디렉터리 생성(없으면) → 타임스탬프 백업 → [mcp_servers.didim-mcp] 블록만
-   추가/교체(다른 설정 보존·순서 유지) → UTF-8(BOM 없음)으로 저장
-```
-
-**검증을 통과하기 전에는 디렉터리 생성·백업·쓰기가 일어나지 않습니다.** 여러 번 실행해도
-`didim-mcp` 블록은 하나만 유지됩니다(멱등). **설정 저장은 프로세스 종료 성공 여부와 무관하게 먼저 완료됩니다.**
-
-> **프로세스 종료 (setup):** 기본 매칭은 **정확히 일치하는 ProcessName `codex`뿐**입니다(부분 문자열 매칭 없음).
-> - **별도 `.cmd` 창에서 실행한 경우:** 종료 대상 목록을 보여주고 `[y/N]`(기본 **N**) 확인 후에만 종료합니다.
-> - **Codex 내부(Skill)에서 실행한 경우:** 현재 Codex 앱은 자동 종료할 수 없습니다. 스크립트는 종료를 시도하지 않고
->   "모든 Codex 창을 직접 종료 후 재실행"을 안내합니다.
-> - 스크립트 자신의 프로세스와 모든 조상 PID는 **절대 종료하지 않습니다.**
-> - 옵션: `-SkipProcessKill`(프로세스 종료 단계 자체를 생략), `-KillWithoutConfirmation`(확인 없이 종료 — 위험, 신뢰 환경에서만),
->   `-ProcessNames @('codex')`(정확한 이름 커스터마이즈).
->
-> **어떤 경우든 새 설정 반영에는 Codex 완전 재시작이 필요합니다.**
-
-최종적으로 `config.toml`에 작성되는 형태:
-```toml
-[mcp_servers.didim-mcp]
-url = "https://didimmcp-dev.didimservice.com/mcp/"
-startup_timeout_sec = 120
-
-[mcp_servers.didim-mcp.http_headers]
-X-Didim-Vault-Api-Key = "<사용자가 입력한 dv_ API Key>"
-```
 
 ---
 
-## API Key 변경 (교체 · 재발급 · 만료)
+## 0.1.x에서 업그레이드하는 기존 사용자 (필수)
 
-이미 Didim MCP를 등록한 사용자가 키를 바꿀 때도 **같은 setup 스크립트**를 다시 실행하면 됩니다.
-플러그인 재설치·기존 설정 제거는 필요 없습니다.
+0.1.x 플러그인은 사용자의 `~/.codex/config.toml`에 다음과 같은 블록을 기록했습니다.
 
-1. Codex 새 채팅에서 `Didim MCP API Key 변경해줘` 입력
-2. `didim-mcp-setup` Skill 안내 확인
-3. 설정 스크립트 실행 승인
-4. 별도 PowerShell 창에서 **새 `dv_` API Key 숨김 입력**
-5. 기존 `config.toml`은 timestamp 백업
-6. 기존 `didim-mcp` 블록이 새 키가 포함된 블록으로 **교체**(하나만 유지)
-7. Codex 완전 종료 후 재실행
-8. `/mcp`에서 연결 상태 확인
+```toml
+[mcp_servers.didim-mcp]
+url = "..."
+startup_timeout_sec = 120
 
-**명시:**
-- 기존 키도, 새 키도 **채팅에 입력하지 않습니다**(새 키는 PowerShell 숨김 입력).
-- 플러그인 재설치 불필요, 기존 MCP 설정 제거 불필요 — setup 재실행이 곧 교체입니다.
-- 다른 MCP 서버 설정은 보존됩니다.
-- 새 키 입력을 취소하거나(빈 값), `dv_` 형식이 아니면 **기존 설정은 그대로 유지**됩니다
-  (검증 성공 후에만 백업·교체 수행).
+[mcp_servers.didim-mcp.http_headers]
+X-Didim-Vault-Api-Key = "<사용자가 입력했던 dv_ API Key>"
+```
+
+**이 블록이 남아 있으면 플러그인이 제공하는 OAuth 서버를 가립니다.** Codex는 계속 예전
+설정으로 접속하고, Connect는 뜨지 않으며, Didim 서버는 더 이상 사용자 API Key를 받지 않으므로
+인증이 실패합니다. 업그레이드 후에는 반드시 아래 정리 스크립트를 한 번 실행하세요.
+
+- 더블클릭: `%USERPROFILE%\.codex\plugins\cache\didim\didim-mcp\<version>\scripts\migrate-didim-mcp.cmd`
+- 또는 PowerShell:
+  ```powershell
+  powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\plugins\cache\didim\didim-mcp\<version>\scripts\migrate-didim-mcp.ps1"
+  ```
+- CLI 사용자: `codex mcp remove didim-mcp`
+
+스크립트가 하는 일:
+
+```
+config.toml 읽기 → 예전 didim-mcp 블록 탐지 → 없으면 그대로 종료
+→ 타임스탬프 백업 → [mcp_servers.didim-mcp] 및 하위 테이블만 제거
+   (다른 MCP 서버·설정은 내용과 순서 그대로 보존) → UTF-8(BOM 없음)으로 저장
+```
+
+- 예전 키 값은 **읽어서 비교하거나 출력하지 않습니다.** `legacy credential removed` 만 알립니다.
+- 정리 후: Codex 완전 종료 → 재실행 → **Connect** → Microsoft 로그인.
+- 이전에 생성된 `config.toml.backup-*` 파일에는 예전 키가 그대로 남아 있습니다. 필요 없으면
+  삭제하세요.
 
 ---
 
 ## 아파트 실거래가 조회 (국토교통부)
 
 지역명과 자연어 날짜만으로 국토교통부 아파트 **매매/전월세** 실거래가를 조회합니다.
-`LAWD_CD`, `DEAL_YMD`, 10자리 법정동코드, serviceKey를 직접 입력할 필요가 없습니다
+`LAWD_CD`, `DEAL_YMD`, 10자리 법정동코드, `serviceKey`를 직접 입력할 필요가 없습니다
 (`molit-apartment-transactions` Skill이 자동 적용).
 
 예시 요청:
@@ -165,6 +116,9 @@ X-Didim-Vault-Api-Key = "<사용자가 입력한 dv_ API Key>"
 - 국토교통부 아파트 매매 실거래가 조회 (`molit-apt-trade__get_apt_trade_real_transactions`) — 매매
 - 국토교통부 아파트 전월세 실거래가 조회 (`molit-apt-rent__get_apt_rent_real_transactions`) — 전월세
 
+공공데이터 `serviceKey`는 Didim MCP 서버가 서버 측에서 주입합니다. 사용자와 Codex는 보유하지
+않습니다.
+
 ---
 
 ## 저장소 구조
@@ -173,15 +127,13 @@ X-Didim-Vault-Api-Key = "<사용자가 입력한 dv_ API Key>"
 .
 ├── .agents/plugins/marketplace.json          # Marketplace 매니페스트 (name: didim)
 ├── plugins/didim-mcp/                        # ← 사용자에게 설치되는 범위
-│   ├── .codex-plugin/plugin.json             # 플러그인 매니페스트 (버전 표기 · MCP 서버 미등록)
+│   ├── .codex-plugin/plugin.json             # 플러그인 매니페스트 (mcpServers 로 Hosted MCP 선언)
 │   ├── README.md
 │   ├── scripts/
-│   │   ├── setup-didim-mcp.ps1               # config.toml에 didim-mcp 설정 작성 (멱등)
-│   │   ├── setup-didim-mcp.cmd               # 더블클릭 실행 런처
-│   │   ├── remove-didim-mcp.ps1              # didim-mcp 블록만 제거
-│   │   └── remove-didim-mcp.cmd
+│   │   ├── migrate-didim-mcp.ps1             # 0.1.x 레거시 config.toml 블록 정리
+│   │   └── migrate-didim-mcp.cmd             # 더블클릭 실행 런처
 │   └── skills/
-│       ├── didim-mcp-setup/SKILL.md          # 최초 설정 · 키 교체 · 문제 해결 (자동 선택)
+│       ├── didim-mcp-connect/SKILL.md        # 연결 · 재연결 · 업그레이드 · 문제 해결 (자동 선택)
 │       ├── didim-mcp-usage/SKILL.md          # 안전 사용 (자동 선택)
 │       └── molit-apartment-transactions/SKILL.md  # 국토교통부 아파트 실거래가 조회 (자동 선택)
 ├── CLAUDE.md                                 # 리포 작업용 에이전트 지시문 (배포 안 됨)
@@ -193,24 +145,24 @@ X-Didim-Vault-Api-Key = "<사용자가 입력한 dv_ API Key>"
 > 현재 플러그인 버전은 `plugins/didim-mcp/.codex-plugin/plugin.json`의 `version` 필드가
 > 기준입니다. (이 도식에 버전을 중복 표기하지 않습니다.)
 
-> 참고: 설정 스크립트는 **플러그인 내부**(`plugins/didim-mcp/scripts/`)에 위치합니다.
-> Codex는 플러그인 설치 시 플러그인 디렉터리만 배포하므로, Skill이 설치 후에도
-> 스크립트를 찾을 수 있으려면 스크립트가 플러그인 안에 있어야 합니다.
-> 같은 이유로 `CLAUDE.md`와 `.claude/rules/`는 설치본에 포함되지 않으며, 플러그인 동작에
-> 영향을 주지 않습니다.
+> 참고: 스크립트는 **플러그인 내부**(`plugins/didim-mcp/scripts/`)에 위치합니다.
+> Codex는 설치 시 플러그인 디렉터리만 배포하므로, 설치 후에도 스크립트를 찾을 수 있으려면
+> 스크립트가 플러그인 안에 있어야 합니다. 같은 이유로 `CLAUDE.md`와 `.claude/rules/`는
+> 설치본에 포함되지 않으며, 플러그인 동작에 영향을 주지 않습니다.
 
 ---
 
-## 업데이트 방법 (운영자 · 사용자)
+## 업데이트 방법
 
 운영자가 새 버전을 push 하면 사용자는 **Codex 앱의 플러그인 화면**에서 마켓플레이스를 갱신한 뒤
 **Didim MCP**를 다시 설치(업데이트)합니다.
 
-- **플러그인 업데이트는 사용자의 기존 키를 덮어쓰지 않습니다.** 키는 `config.toml`에 있고,
-  플러그인 업데이트는 스크립트/스킬만 갱신합니다.
-- MCP URL이나 인증 방식이 바뀐 경우에만 `Didim MCP 재설정` 요청(또는 setup 스크립트 재실행)이 필요합니다.
+- MCP URL은 플러그인 매니페스트에 있으므로, URL이 바뀌어도 **플러그인 업데이트만으로 반영**됩니다.
+- OAuth 연결(토큰)은 업데이트로 지워지지 않습니다. 만료되면 Codex가 refresh 하고, 실패하면
+  Connect를 다시 누르면 됩니다.
+- 0.1.x → 0.2.x 업그레이드는 위의 **레거시 정리**를 한 번 수행해야 합니다.
 
-**(선택) Codex CLI 사용자** — 별도로 설치한 `codex` CLI를 쓰는 경우에만:
+**(선택) Codex CLI 사용자**
 ```bash
 codex plugin marketplace upgrade
 codex plugin add didim-mcp@didim
@@ -220,45 +172,31 @@ codex plugin add didim-mcp@didim
 
 ## 제거 방법
 
-**Codex 앱의 플러그인 화면**에서 **Didim MCP**를 제거합니다.
+**Codex 앱의 플러그인 화면**에서 **Didim MCP**를 제거합니다. 플러그인이 제공하던 MCP 서버는
+플러그인과 함께 사라지므로 `config.toml`을 따로 정리할 필요가 없습니다.
 
-**(선택) Codex CLI 사용자** — 별도로 설치한 `codex` CLI를 쓰는 경우에만:
+**(선택) Codex CLI 사용자**
 ```bash
 codex plugin remove didim-mcp@didim
 # (선택) codex plugin marketplace remove didim
 ```
 
-`config.toml`의 Didim MCP 설정 제거(다른 설정은 보존, 제거 전 백업 생성):
-- 더블클릭: `...\scripts\remove-didim-mcp.cmd`
-- 또는:
-  ```powershell
-  powershell -NoProfile -ExecutionPolicy Bypass -File ".\plugins\didim-mcp\scripts\remove-didim-mcp.ps1"
-  ```
-
-> remove는 **기본적으로 프로세스를 종료하지 않습니다**(y/N 프롬프트도 없음). 제거 후 Codex를 직접 완전 종료·재실행하세요.
-> 종료까지 원하면 `-KillCodexProcesses`(정확한 이름 `codex` 대상, `[y/N]` 기본 N)를 명시적으로 전달합니다.
-
-### 백업 복원
-
-setup/remove 실행 시 `config.toml.backup-YYYYMMDD-HHmmss` 백업이 생성됩니다. 복원하려면:
-```powershell
-Copy-Item "$env:USERPROFILE\.codex\config.toml.backup-YYYYMMDD-HHmmss" "$env:USERPROFILE\.codex\config.toml" -Force
-```
+저장된 OAuth 자격증명까지 지우려면 플러그인의 **Disconnect**를 사용하거나, CLI에서
+`codex mcp logout didim-mcp` 를 실행합니다.
 
 ---
 
 ## 보안 주의사항
 
-- 실제 `dv_` API Key를 **저장소/플러그인 파일에 커밋하지 마세요.** 이 저장소에는 키가 없습니다.
-- 키는 사용자 PC의 `~/.codex/config.toml`에 **평문**으로 저장됩니다(수동 MCP 헤더 등록과 동일 수준).
-  공용 PC에서는 사용에 주의하세요.
-- MCP 엔드포인트는 **HTTPS**(`https://didimmcp-dev.didimservice.com/mcp/`)입니다. NCP host nginx 가 Wildcard 인증서
-  `*.didimservice.com` 로 TLS 를 종단하므로 `X-Didim-Vault-Api-Key` 헤더는 전송 구간에서
-  암호화됩니다. NodePort/IP 직접 접근(평문 HTTP)은 사용하지 마세요.
-- 키는 **PowerShell 숨김 입력**으로만 받으며, 채팅창/명령행 인자/로그에 노출하지 않습니다.
-- Skill 규칙상 API Key·토큰·인증 헤더 등 비밀값은 응답에 그대로 노출하지 않습니다.
+- 사용자 API Key는 더 이상 존재하지 않습니다. **API Key를 요구하는 화면·안내를 만나면
+  구버전 플러그인입니다.**
+- 이 저장소, 플러그인 파일, Skill 어디에도 자격증명이 들어 있지 않습니다.
+- MCP 엔드포인트는 **HTTPS**입니다(`*.didimservice.com` Wildcard 인증서로 TLS 종단).
+  NodePort/IP 직접 접근(평문 HTTP)은 사용하지 않습니다.
+- OAuth 토큰은 Codex가 관리합니다. Skill과 모델은 토큰을 읽거나 출력하지 않습니다.
+- 0.1.x 시절 생성된 `config.toml.backup-*` 파일에는 예전 평문 키가 남아 있을 수 있습니다.
+  필요 없으면 삭제하세요.
 - 읽기 전용 작업을 우선하고, 데이터 변경·고위험 작업은 사용자 승인 후 진행합니다.
-- `config.toml` 수정 전 항상 타임스탬프 백업이 생성됩니다.
 
 ---
 
@@ -266,19 +204,21 @@ Copy-Item "$env:USERPROFILE\.codex\config.toml.backup-YYYYMMDD-HHmmss" "$env:USE
 
 | 증상 | 확인 / 조치 |
 | --- | --- |
-| 설치했는데 `/mcp`에 없음 | 설치만으로는 등록되지 않습니다. `Didim MCP 설정해줘` 요청 후 설정 스크립트 실행 |
-| 설정했는데 안 보임 | Codex를 **완전히 재시작**했는지 확인 |
-| `No Didim MCP tools are exposed` | `Didim MCP 재설정` 요청으로 setup 재실행, `dv_` 키가 유효/최신인지 확인 |
-| 인증 실패 | `config.toml`의 `X-Didim-Vault-Api-Key` 값이 올바른 개인 `dv_` 키인지 확인 |
-| 예전 `http://49.50.138.22:31083/mcp/` 로 붙어 있음 | 0.1.4 이하로 설정한 사용자입니다. **플러그인을 0.1.5 이상으로 업데이트한 뒤 `Didim MCP 재설정`** 을 요청하면 HTTPS URL 로 바뀝니다 |
+| 설치했는데 `/mcp`에 `didim-mcp`가 없음 | Codex를 **완전히 재시작**하고 **새 채팅**을 여세요. 플러그인 제공 MCP는 기동 시점에 반영됩니다 |
+| Connect 버튼이 안 보임 | 플러그인이 설치·활성 상태인지 확인 → Codex 재시작. 그래도 없으면 아래 "예전 설정" 항목 |
+| 업그레이드 후 인증이 계속 실패함 | 0.1.x가 남긴 `[mcp_servers.didim-mcp]`가 플러그인 설정을 가리고 있습니다. `migrate-didim-mcp.cmd` 실행 후 재시작 → Connect |
+| 예전 `X-Didim-Vault-Api-Key` / `http://49.50.138.22:31083/mcp/` 로 붙어 있음 | 같은 원인입니다. 위 정리 스크립트를 실행하세요 |
+| OAuth 로그인 창에서 다른 계정으로 로그인하고 싶음 | Microsoft 로그인 화면에서 **"다른 계정으로 로그인"** 을 선택하세요 |
+| 연결은 됐는데 특정 Tool이 없음 | 인증 문제가 아닙니다. **Didim 사용자 포털에서 해당 Tool을 활성화**한 뒤 Codex 재시작 |
+| 한동안 쓰다가 갑자기 인증 실패 | Codex가 refresh를 시도합니다. 실패하면 Disconnect → Connect |
 | 설치가 안 됨 | 플러그인 화면에 **Didim** 마켓플레이스가 추가됐는지 확인 (CLI 사용자는 `codex plugin marketplace list`) |
-| 스크립트 실행 시 한글이 `??`/깨져서 나옴 | Windows PowerShell 5.1의 UTF-8 처리 문제입니다. **플러그인을 최신 버전(0.1.3 이상)으로 업데이트**하세요. 스크립트가 UTF-8 BOM + `chcp 65001` + 콘솔 인코딩을 적용해 한글을 정상 출력합니다. |
+| 스크립트 실행 시 한글이 `??`/깨져서 나옴 | Windows PowerShell 5.1의 UTF-8 처리 문제입니다. 최신 버전으로 업데이트하세요. 스크립트가 UTF-8 BOM + `chcp 65001` + 콘솔 인코딩을 적용합니다 |
 
 ---
 
 ## 참고
 
 - 플러그인 문서: [`plugins/didim-mcp/README.md`](plugins/didim-mcp/README.md)
-- 최초 설정 Skill: [`plugins/didim-mcp/skills/didim-mcp-setup/SKILL.md`](plugins/didim-mcp/skills/didim-mcp-setup/SKILL.md)
+- 연결 Skill: [`plugins/didim-mcp/skills/didim-mcp-connect/SKILL.md`](plugins/didim-mcp/skills/didim-mcp-connect/SKILL.md)
 - 안전 사용 Skill: [`plugins/didim-mcp/skills/didim-mcp-usage/SKILL.md`](plugins/didim-mcp/skills/didim-mcp-usage/SKILL.md)
 - 아파트 실거래가 Skill: [`plugins/didim-mcp/skills/molit-apartment-transactions/SKILL.md`](plugins/didim-mcp/skills/molit-apartment-transactions/SKILL.md)

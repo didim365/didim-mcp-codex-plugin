@@ -1,64 +1,65 @@
 # Didim MCP (Codex Plugin)
 
-This plugin connects Codex to the Didim MCP server. It **does not register an MCP
-server by itself.** Instead it ships:
+This plugin connects Codex to the hosted Didim MCP server using **OAuth only**.
 
-- **Skills** — `didim-mcp-setup` (first-time setup & troubleshooting),
+- The plugin manifest declares the MCP server (`mcpServers` in
+  `.codex-plugin/plugin.json`), so installing the plugin registers it.
+- **Codex** performs the sign-in through its built-in MCP OAuth client:
+  Microsoft (Entra) login → Didim consent → tokens stored by Codex.
+- There is **no API key**. Nothing is typed, pasted, or written to
+  `~/.codex/config.toml` by this plugin.
+
+```
+url: https://didimmcp-dev.didimservice.com/mcp   (Streamable HTTP)
+auth: OAuth 2.1 — discovered from the server, run by Codex
+```
+
+It also ships:
+
+- **Skills** — `didim-mcp-connect` (connect, reconnect, upgrade, troubleshooting),
   `didim-mcp-usage` (safe usage), and `molit-apartment-transactions` (MOLIT
   apartment trade/rent real-transaction queries by district name + month).
-- **Scripts** — `scripts/setup-didim-mcp.ps1` / `.cmd` and
-  `scripts/remove-didim-mcp.ps1` / `.cmd`.
+- **Scripts** — `scripts/migrate-didim-mcp.ps1` / `.cmd`, for users upgrading
+  from 0.1.x.
 
-For full installation, setup, update, and removal instructions, see the
+For full installation, connection, update, and removal instructions, see the
 [repository root README](../../README.md).
 
-## Setup (Windows)
+## Connect
 
-Ask Codex in a new chat:
+Install the plugin, press **Connect**, sign in with your Microsoft account, then
+restart Codex and run `/mcp` to confirm `didim-mcp`.
+
+If Connect is not offered, ask Codex in a new chat:
 
 ```
-Didim MCP 설정해줘
+Didim MCP 연결해줘
 ```
 
-The `didim-mcp-setup` skill explains what happens and, after your approval, runs
-the setup script. You enter your personal `dv_...` API key in a **hidden
-PowerShell prompt** (never in chat). Nothing on disk changes until the key passes
-`^dv_[A-Za-z0-9_-]{8,}$` validation; only then does the script create
-`~/.codex` (if missing), take a timestamped `config.toml` backup, and write this
-block as UTF-8 without BOM, preserving all other settings and their order:
+The `didim-mcp-connect` skill diagnoses the cause and walks through the fix.
 
-```toml
-[mcp_servers.didim-mcp]
-url = "https://didimmcp-dev.didimservice.com/mcp/"
-startup_timeout_sec = 120
+## Upgrading from 0.1.x — required once
 
-[mcp_servers.didim-mcp.http_headers]
-X-Didim-Vault-Api-Key = "<your dv_ key>"
-```
-
-Manual run (if the skill cannot launch it):
+Plugin 0.1.x wrote `[mcp_servers.didim-mcp]` (with an `X-Didim-Vault-Api-Key`
+header) into the user's `config.toml`. That block **shadows** the
+plugin-provided server, so Codex keeps using the old entry and OAuth never runs.
+Didim no longer accepts user API keys, so every call fails.
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\setup-didim-mcp.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\migrate-didim-mcp.ps1"
 ```
 
-The config is saved regardless of process state. To reload it you must fully
-restart Codex — the plugin cannot reload live. When run in a **separate `.cmd`
-window**, the script offers to close exact-match `codex` processes (`[y/N]`,
-default No). When run **inside Codex**, it will not close the app itself and asks
-you to quit all Codex windows manually. It never closes its own process or
-ancestors. Default match is the exact ProcessName `codex` (no substring, no
-`gpt`). Options: `-SkipProcessKill`, `-KillWithoutConfirmation`, `-ProcessNames`.
+It takes a timestamped backup, removes only the `[mcp_servers.didim-mcp]` and
+`[mcp_servers.didim-mcp.*]` tables (other MCP servers and settings keep their
+content and order), and writes UTF-8 without BOM. It never reads back, compares,
+prints, or logs the old key — only `legacy credential removed`. It is idempotent:
+if there is no legacy block it changes nothing.
 
-Then fully restart the Codex app and run `/mcp` to confirm `didim-mcp` and its tools.
+By default it does **not** touch any process; pass `-KillCodexProcesses` to opt
+into closing exact-match `codex` processes. Restart Codex, then press Connect.
 
-## Change / rotate the API key
-
-Ask Codex `Didim MCP API Key 변경해줘` (or "change/rotate Didim MCP key"). This
-re-runs the **same** setup script — no reinstall, no remove first. It auto-detects
-the existing `[mcp_servers.didim-mcp]` block, backs up `config.toml`, and replaces
-only the key. Enter the new `dv_` key in the hidden prompt. If you cancel or the
-key is invalid, the existing config is left unchanged. Restart Codex to apply.
+Users with the standalone `codex` CLI can run `codex mcp remove didim-mcp`
+instead.
 
 ## Apartment real-transaction queries (MOLIT)
 
@@ -77,27 +78,20 @@ digits) and `DEAL_YMD` (`YYYYMM`), and calls the trade or rent tool.
 
 Enable the matching tools in the Didim user portal, then restart Codex:
 국토교통부 법정동코드 조회 (always) · 국토교통부 아파트 매매 실거래가 조회 (trade)
-· 국토교통부 아파트 전월세 실거래가 조회 (rent).
+· 국토교통부 아파트 전월세 실거래가 조회 (rent). Upstream provider credentials are
+injected server-side from your OAuth identity.
 
 ## Remove
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\remove-didim-mcp.ps1"
-```
-
-Removes only the `[mcp_servers.didim-mcp]` block (a timestamped backup is created
-first). Other MCP servers and settings are preserved. By default it does **not**
-touch any process (no prompt); pass `-KillCodexProcesses` to opt into closing
-exact-match `codex` processes. Restart Codex manually to apply.
+Remove the plugin from the Codex plugin screen. The MCP server goes with it —
+there is no `config.toml` entry to clean up. To drop the stored OAuth
+credentials, use **Disconnect** (or `codex mcp logout didim-mcp`).
 
 ## Safety
 
 - Read-only operations first; approval required before changes or high-risk actions.
-- API keys, tokens, and credentials are never echoed or logged.
-- The real API key is never stored in this repository — only in your local
-  `config.toml`, where it sits **in plaintext** (the same level as configuring an
-  MCP header by hand).
-- The MCP endpoint is plain HTTP over an IP address, with no TLS, so the
-  `X-Didim-Vault-Api-Key` header is sent unencrypted. Use it only on a trusted
-  machine and network.
+- The plugin never asks for, stores, or transmits a user credential. Tokens are
+  held by Codex; skills and the model never read or print them.
+- Tokens, credentials, and auth headers returned by a tool are never echoed.
+- The MCP endpoint is HTTPS.
 - MCP execution results are kept distinct from model analysis.

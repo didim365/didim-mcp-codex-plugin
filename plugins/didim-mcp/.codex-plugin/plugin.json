@@ -1,23 +1,31 @@
 {
   "name": "didim-mcp",
-  "version": "0.1.5",
-  "description": "Codex plugin that ships Didim MCP setup/usage skills and helper scripts. It does not register an MCP server itself; the setup script writes the server config into the user's config.toml.",
+  "version": "0.2.0",
+  "description": "Connect Didim MCP with your Microsoft account. The plugin registers the hosted Didim MCP server and Codex handles the OAuth sign-in; no API key is ever entered.",
   "author": {
     "name": "Didim365"
   },
   "skills": "./skills/",
+  "mcpServers": {
+    "didim-mcp": {
+      "url": "https://didimmcp-dev.didimservice.com/mcp",
+      "startup_timeout_sec": 120
+    }
+  },
   "interface": {
     "displayName": "Didim MCP",
-    "shortDescription": "Set up and use Didim MCP safely from Codex.",
-    "longDescription": "Deploys skills (first-time setup, safe usage, and MOLIT apartment trade/rent real-transaction queries) plus PowerShell/CMD helper scripts. Ask Codex to \"Didim MCP 설정해줘\" to configure your personal API key into ~/.codex/config.toml; related questions then apply the matching skill automatically.",
+    "shortDescription": "Use Didim MCP tools with your Microsoft account.",
+    "longDescription": "Registers the hosted Didim MCP server and ships skills for safe tool use and MOLIT apartment trade/rent real-transaction queries. Sign in through Connect with your Microsoft account — Codex runs the OAuth flow for you, so there is no API key to create, copy, or paste. Only the tools you enabled in the Didim portal are exposed.",
     "developerName": "Didim365",
     "category": "Productivity",
     "capabilities": [
-      "Read"
+      "Interactive",
+      "Read",
+      "Write"
     ],
     "defaultPrompt": [
-      "Didim MCP 설정해줘",
-      "Show the Didim MCP tools available to me."
+      "내가 쓸 수 있는 Didim MCP 도구를 보여줘",
+      "구로구 지난달 아파트 매매 실거래가 알려줘"
     ]
   }
 }

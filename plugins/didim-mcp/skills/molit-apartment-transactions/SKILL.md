@@ -22,6 +22,7 @@ description: >
 Answer Korean apartment real-transaction questions from a district name and a
 natural-language month, without the user knowing `LAWD_CD`, `DEAL_YMD`, the
 10-digit legal-dong code, the public-data `serviceKey`, or any Vault resource ID.
+Credentials are resolved server-side from the signed-in Didim OAuth identity.
 
 ## Tools (exact MCP names — do not guess or substitute)
 
@@ -166,8 +167,9 @@ Keep MCP results separate from your own analysis.
 ## Error distinction (never conflate with "no data")
 
 - **Tool not enabled** → 필요한 MCP Tool이 현재 내 도구에 없습니다 (portal + restart).
-- **MCP auth failure** → Didim MCP 인증 또는 API Key 설정을 확인해야 합니다.
-  Never request or print a `dv_` key.
+- **MCP auth failure** → Didim MCP 연결이 만료되었거나 인증에 실패했습니다.
+  플러그인의 Connect 로 Microsoft 계정 로그인을 다시 진행해야 합니다
+  (`didim-mcp-connect` skill). Never request or print any key, token, or header.
 - **Provider credential failure** → 공공데이터 API 인증정보 주입에 실패했습니다.
   관리자에게 Provider Credential 상태 확인이 필요합니다. Never ask the user for a
   `serviceKey`.
@@ -178,7 +180,8 @@ Keep MCP results separate from your own analysis.
 ## Security
 
 - Never generate legal-dong codes from memory; only from the code tool.
-- Never accept or print a `serviceKey` or a Didim `dv_` API key.
+- Never accept or print a `serviceKey`, access token, or any auth header value.
+  The user never supplies a Didim credential; sign-in is handled by Connect.
 - Never show Vault resource IDs in normal user replies; never log credentials.
 - Validate any user-supplied code's format, and verify name↔code agreement via
   the code tool.

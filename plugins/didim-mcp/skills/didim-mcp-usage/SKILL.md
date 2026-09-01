@@ -8,13 +8,13 @@ description: >-
   or MCP tool; or says things like "didim-mcp로 확인해줘" or names a specific
   Didim tool. Prioritizes read-only lookups and requires approval before changes
   or high-risk actions. If Didim MCP is not exposed under /mcp, defer to the
-  didim-mcp-setup skill instead of retrying blindly.
+  didim-mcp-connect skill instead of retrying blindly.
 ---
 
 # Didim MCP Usage
 
 Use this skill when a request calls for the Didim MCP server or one of its
-exposed tools, and the server is already configured.
+exposed tools, and the server is already connected.
 
 For MOLIT apartment trade or rent (전월세) real-transaction queries by district
 name and contract month, prefer the `molit-apartment-transactions` skill.
@@ -26,8 +26,9 @@ current session:
 
 - Do **not** repeatedly retry the same failing call or invent a fallback.
 - Tell the user the server/tools are not currently exposed and point them to the
-  **didim-mcp-setup** skill (e.g. suggest they say "Didim MCP 설정해줘"), then a
-  full Codex restart.
+  **didim-mcp-connect** skill (e.g. suggest they say "Didim MCP 연결해줘"). Didim
+  MCP signs in with a Microsoft account through the plugin's Connect action;
+  never ask for an API key, token, or auth header.
 
 ## Rules
 
@@ -35,8 +36,9 @@ current session:
 2. Prefer read-only lookup and inspection operations.
 3. Before changing data or performing a high-risk action, explain the intended
    action and obtain explicit user approval.
-4. Never expose the raw value of an API key, token, credential, authorization
-   header, or secret returned by a tool.
+4. Never expose the raw value of a token, credential, authorization header, or
+   secret returned by a tool. Never ask the user for one either — the connection
+   is authenticated by Codex's OAuth sign-in, not by anything the user types.
 5. Clearly separate MCP execution results from model analysis, inference, or
    recommendation.
 6. If a required tool is unavailable, state that limitation. Do not invent a

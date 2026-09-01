@@ -5,7 +5,7 @@ paths:
 
 # SKILL.md 작성 규칙
 
-대상: `didim-mcp-setup`, `didim-mcp-usage`, `molit-apartment-transactions`.
+대상: `didim-mcp-connect`, `didim-mcp-usage`, `molit-apartment-transactions`.
 이 파일들은 문서가 아니라 **런타임 동작**이다. Codex가 읽고 그대로 수행한다.
 
 ## Frontmatter
@@ -18,6 +18,15 @@ paths:
 - 새 Skill을 추가할 때는 기존 3개의 `description`과 트리거가 겹치지 않는지 확인한다. 겹치면
   어느 Skill이 뜰지 예측할 수 없다. 겹치는 영역이 있으면 본문에 위임 관계를 명시한다
   (`didim-mcp-usage` → `molit-apartment-transactions` 위임이 그 예다).
+
+## 인증 (OAuth-only)
+
+- Skill은 **자격증명을 요구·수집·출력하지 않는다.** API Key 입력, `dv_` 키, 토큰 붙여넣기,
+  헤더 설정, MCP URL 직접 입력을 안내하는 문장을 넣지 않는다. 연결은 플러그인의 Connect →
+  Microsoft 로그인 → Didim 동의로만 이루어지며 Codex가 수행한다.
+- 인증 실패 안내의 종착점은 항상 `didim-mcp-connect` Skill(= Connect 재시도)이다.
+- Skill이 `~/.codex/config.toml`을 읽거나 쓰도록 지시하지 않는다. 유일한 예외는
+  `didim-mcp-connect`가 0.1.x 레거시 블록 정리 스크립트 실행을 **승인받아** 제안하는 경우다.
 
 ## MCP Tool 참조
 
@@ -48,7 +57,7 @@ paths:
 | 상황 | 안내 방향 |
 | --- | --- |
 | Tool 미노출 | 포털에서 해당 Tool 활성화 후 Codex 재시작 |
-| MCP 인증 실패 | `didim-mcp-setup`으로 키 재설정 (키 값은 묻지도 출력하지도 않는다) |
+| MCP 인증 실패 | `didim-mcp-connect`로 재연결(Connect → Microsoft 로그인). 키·토큰은 묻지도 출력하지도 않는다 |
 | Provider credential 실패 | 관리자에게 Provider Credential 확인 요청 (`serviceKey`를 사용자에게 묻지 않는다) |
 | 상위 API 오류 | HTTP 상태 + MCP가 돌려준 안전한 오류 문구로 설명 |
 | 데이터 없음 | 성공 응답 + 빈 배열일 때만. 적용된 조건을 함께 제시 |

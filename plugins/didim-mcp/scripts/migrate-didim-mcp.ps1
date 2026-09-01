@@ -1,14 +1,25 @@
 ﻿#requires -Version 5.1
 <#
 .SYNOPSIS
-    Remove the Didim MCP server block from the current user's Codex config.toml.
+    Remove the legacy Didim MCP server block from the current user's Codex config.toml.
 
 .DESCRIPTION
-    Deletes only the [mcp_servers.didim-mcp] and [mcp_servers.didim-mcp.*]
+    Didim MCP now connects over OAuth. The plugin declares the hosted MCP server
+    itself (see .codex-plugin/plugin.json) and Codex signs you in through
+    Connect, so no API key or auth header is configured any more.
+
+    A leftover [mcp_servers.didim-mcp] block in config.toml — written by plugin
+    versions 0.1.x — SHADOWS the plugin-provided server: Codex keeps using the
+    old URL and the old X-Didim-Vault-Api-Key header, and the OAuth Connect
+    never happens. This script deletes that block so the plugin's OAuth server
+    takes over.
+
+    It deletes only the [mcp_servers.didim-mcp] and [mcp_servers.didim-mcp.*]
     tables. All other MCP servers and general settings are preserved and not
-    reordered. A timestamped backup is created before any change. If no Didim
-    MCP configuration is present, the script reports that and exits normally.
-    Safe to run multiple times. The API key is never printed.
+    reordered. A timestamped backup is created before any change. If no legacy
+    Didim MCP configuration is present, the script reports that and exits
+    normally. Safe to run multiple times. No credential value is ever read back,
+    compared, printed, or logged.
 
 .PARAMETER KillCodexProcesses
     Opt in to closing running Codex processes after removal. Off by default;
@@ -21,7 +32,8 @@
     EXACT ProcessName values (no .exe, no substring) to close. Default: codex.
 
 .NOTES
-    No administrator privileges required. Restart Codex after running.
+    No administrator privileges required. Restart Codex after running, then use
+    Connect to sign in with your Microsoft account.
 #>
 [CmdletBinding()]
 param(
@@ -108,6 +120,11 @@ function Invoke-CodexProcessClose {
     }
 }
 
+# Remove every [mcp_servers.didim-mcp] / [mcp_servers.didim-mcp.*] table from a
+# TOML document, preserving all other lines and their order. A table spans from
+# its header line up to (but not including) the next table header or EOF. This
+# takes the whole legacy block with it: url, startup_timeout_sec, and the
+# http_headers / env_http_headers sub-tables that carried the API key.
 function Remove-DidimBlock {
     param([string]$Content)
     if ([string]::IsNullOrEmpty($Content)) { return '' }
@@ -132,14 +149,15 @@ function Remove-DidimBlock {
 }
 
 Write-Host ''
-Write-Host 'Didim MCP - remove' -ForegroundColor Cyan
-Write-Host '------------------'
+Write-Host 'Didim MCP - legacy config cleanup (OAuth migration)' -ForegroundColor Cyan
+Write-Host '--------------------------------------------------'
 
 $codexDir = Join-Path $HOME '.codex'
 $cfgPath  = Join-Path $codexDir 'config.toml'
 
 if (-not (Test-Path -LiteralPath $cfgPath)) {
-    Write-Host 'No config.toml found; nothing to remove.' -ForegroundColor Green
+    Write-Host 'No config.toml found; nothing to clean up.' -ForegroundColor Green
+    Write-Host 'The plugin already provides the Didim MCP server. Use Connect to sign in.'
     exit 0
 }
 
@@ -147,9 +165,14 @@ $existing = [System.IO.File]::ReadAllText($cfgPath, [System.Text.Encoding]::UTF8
 
 $hasBlock = ($existing -match '(?m)^\s*\[\s*mcp_servers\.didim-mcp(\s*\]|\.[^\]]+\])')
 if (-not $hasBlock) {
-    Write-Host 'No Didim MCP configuration was found; nothing to remove.' -ForegroundColor Green
+    Write-Host 'No legacy Didim MCP configuration was found; nothing to clean up.' -ForegroundColor Green
+    Write-Host 'The plugin already provides the Didim MCP server. Use Connect to sign in.'
     exit 0
 }
+
+Write-Host 'Legacy [mcp_servers.didim-mcp] configuration found.' -ForegroundColor Yellow
+Write-Host 'It will be removed so the plugin-provided OAuth connection can take over.'
+Write-Host 'Other MCP servers and settings are left untouched.'
 
 # Timestamped backup before change.
 $stamp  = Get-Date -Format 'yyyyMMdd-HHmmss'
@@ -164,8 +187,14 @@ if (-not [string]::IsNullOrEmpty($final)) { $final += $nl }
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 [System.IO.File]::WriteAllText($cfgPath, $final, $utf8)
 
+# The removed block may have carried an API key header. Never echo its value.
+$existing = $null
+[System.GC]::Collect()
+
 Write-Host ''
-Write-Host "[OK] Didim MCP configuration removed from: $cfgPath" -ForegroundColor Green
+Write-Host "[OK] Legacy Didim MCP configuration removed from: $cfgPath" -ForegroundColor Green
+Write-Host '     legacy credential removed (its value was never displayed or logged).'
+Write-Host '     Your old backup files still contain it - delete them if you no longer need them.'
 
 # Process closing is opt-in only. Default flow never touches any process.
 if ($KillCodexProcesses) {
@@ -180,5 +209,8 @@ if ($KillCodexProcesses) {
 Write-Host ''
 Write-Host 'Next steps:' -ForegroundColor Yellow
 Write-Host '  1. Fully quit ALL Codex windows.'
-Write-Host '  2. Start the Codex app again so the change takes effect.'
+Write-Host '  2. Start the Codex app again.'
+Write-Host '  3. Open the Didim MCP plugin and press Connect, then sign in with your'
+Write-Host '     Microsoft account. No API key is needed any more.'
+Write-Host '  4. Run  /mcp  and confirm "didim-mcp" is connected.'
 Write-Host ''
