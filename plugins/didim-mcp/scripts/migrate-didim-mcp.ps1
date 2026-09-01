@@ -32,8 +32,9 @@
     EXACT ProcessName values (no .exe, no substring) to close. Default: codex.
 
 .NOTES
-    No administrator privileges required. Restart Codex after running, then use
-    'codex mcp login didim-mcp' to sign in with your Microsoft account.
+    No administrator privileges required. Restart Codex after running, then sign
+    in with your Microsoft account when Codex asks. Standalone CLI users can run
+    'codex mcp login didim-mcp' for their own CLI context.
 #>
 [CmdletBinding()]
 param(
@@ -158,7 +159,7 @@ $cfgPath  = Join-Path $codexDir 'config.toml'
 if (-not (Test-Path -LiteralPath $cfgPath)) {
     Write-Host 'No config.toml found; nothing to clean up.' -ForegroundColor Green
     Write-Host 'The plugin already provides the Didim MCP server.'
-    Write-Host 'Sign in with:  codex mcp login didim-mcp'
+    Write-Host 'Restart Codex and sign in with your Microsoft account when asked.'
     exit 0
 }
 
@@ -168,7 +169,7 @@ $hasBlock = ($existing -match '(?m)^\s*\[\s*mcp_servers\.didim-mcp(\s*\]|\.[^\]]
 if (-not $hasBlock) {
     Write-Host 'No legacy Didim MCP configuration was found; nothing to clean up.' -ForegroundColor Green
     Write-Host 'The plugin already provides the Didim MCP server.'
-    Write-Host 'Sign in with:  codex mcp login didim-mcp'
+    Write-Host 'Restart Codex and sign in with your Microsoft account when asked.'
     exit 0
 }
 
@@ -212,7 +213,8 @@ Write-Host ''
 Write-Host 'Next steps:' -ForegroundColor Yellow
 Write-Host '  1. Fully quit ALL Codex windows.'
 Write-Host '  2. Start the Codex app again.'
-Write-Host '  3. Sign in:  codex mcp login didim-mcp'
-Write-Host '     Complete the Microsoft login in the browser. No API key is needed.'
+Write-Host '  3. Sign in with your Microsoft account when Codex asks.'
+Write-Host '     Using a Didim MCP tool triggers the sign-in. No API key is needed.'
+Write-Host '     (Standalone codex CLI only:  codex mcp login didim-mcp)'
 Write-Host '  4. Run  /mcp  and confirm "didim-mcp" is connected.'
 Write-Host ''

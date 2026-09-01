@@ -28,10 +28,21 @@ error, which account is currently signed in, or switching Microsoft accounts.
 Suggest the user say "Didim MCP 연결해줘". Never ask for an API key, token, or
 auth header, and never run a login/logout command from this skill.
 
+## The current session is the source of truth
+
+The tools exposed to this session tell you what is available. Answer "내가 쓸 수
+있는 Didim MCP 도구를 보여줘" from that registry.
+
+Never run `codex mcp list` or `codex plugin list` as a preflight, and never
+conclude from an empty CLI listing that Didim MCP is unavailable. A nested
+`codex` command runs in a different runtime from the Codex app — verified: the
+app runs shell commands as a separate sandbox OS user with its own Codex home —
+so it can report zero servers while this session has Didim tools working.
+
 ## If Didim MCP is not available
 
-If `didim-mcp` is not present under `/mcp`, or its tools are not exposed in the
-current session:
+If no Didim tools are exposed in the current session, or a needed tool is
+missing:
 
 - Do **not** repeatedly retry the same failing call or invent a fallback.
 - Distinguish the two causes: an **auth** problem (delegate as above) versus a

@@ -24,17 +24,27 @@ paths:
 - Skill은 **자격증명을 요구·수집·출력하지 않는다.** API Key 입력, `dv_` 키, 토큰 붙여넣기,
   헤더 설정, MCP URL 직접 입력을 안내하는 문장을 넣지 않는다. 연결은 Codex 내장 MCP OAuth
   (Microsoft 로그인 → Didim 동의)로만 이루어진다.
+- **상태 판정의 정본은 현재 세션이다.** 우선순위: ① 이 세션에 노출된 Didim Tool
+  ② 실제 Tool 호출 결과(성공 / 인증 오류 / Tool 미노출) ③ plugin context ④ `/mcp`.
+- **중첩 `codex` CLI 결과를 App 상태의 근거로 쓰지 않는다.** Codex App은 셸 명령을 별도
+  샌드박스 OS 계정(`CodexSandboxOffline`/`Online`)으로 실행하므로 앱과 다른 Codex 홈을
+  읽는다(검증됨: 플러그인이 동작 중인 채팅에서 `codex mcp list`·`codex plugin list`가 0개).
+  `codex mcp list`가 비었다는 이유로 "플러그인 미설치"·"로그인 안 됨"이라고 말하지 않는다.
+- **답변 전에 CLI preflight를 실행하지 않는다.** 계정 조회는 프로필 Tool을 바로 호출한다.
 - **설치된 플러그인 제공 MCP에 Connect/Disconnect 버튼·톱니가 있다고 안내하지 않는다.**
-  Human UAT에서 확인한 Codex App UI에는 존재하지 않는다(설치 시점 OAuth 흐름은 실재한다).
-  인증 lifecycle은 `codex mcp login/logout didim-mcp`로 안내한다.
-- 인증 실패 안내의 종착점은 항상 `didim-mcp-connect` Skill(= OAuth 재로그인)이다. 로그인 계정
-  조회·계정 변경·취소된 로그인 재시도도 전부 `didim-mcp-connect` 소관이며, 다른 Skill은 위임만
-  한다.
-- **재설치를 기본 처방으로 쓰지 않는다.** 취소된 로그인·만료된 세션·미노출 Tool은 재설치 없이
-  해결된다(검증됨: 로그인 중단 후에도 등록이 유지되고 재시도가 동작한다). 플러그인 자체가
-  없거나 캐시가 손상된 근거가 있을 때만 재설치를 제안한다.
-- `codex mcp login` / `codex mcp logout`은 인증 상태를 바꾸므로 실행 전 설명하고 승인받는다.
-  조회(`codex mcp list`, 프로필 Tool)는 read-only다.
+  Human UAT에서 확인한 Codex App UI에는 존재하지 않는다.
+- 인증이 필요하면 **Tool 호출이 호스트의 인증 흐름을 띄운다**(OAuth MCP 규격: Tool 최초
+  호출 시 인증). 이것이 자연어 재인증의 정본 경로다. 설치 시점 OAuth(`ON_INSTALL`)도 실재한다.
+- **검증되지 않은 mechanism을 약속하지 않는다.** 앱에 저장된 로그인을 Skill이 지우는 방법은
+  확인되지 않았다. 강제 재로그인·계정 변경의 확인된 경로는 플러그인 재설치뿐이며, 한계는
+  숨기지 않고 그대로 말한다.
+- `codex mcp login/logout/list`는 **별도 설치한 standalone CLI 전용**으로만 안내하고, 그렇게
+  라벨링한다. App 플러그인 인증 lifecycle의 경로로 제시하지 않는다.
+- 인증 실패 안내의 종착점은 항상 `didim-mcp-connect` Skill이다. 로그인 계정 조회·계정 변경·
+  취소된 로그인 재시도도 전부 `didim-mcp-connect` 소관이며, 다른 Skill은 위임만 한다.
+- **재설치를 1차 처방으로 쓰지 않는다.** 취소된 로그인·만료된 세션·미노출 Tool은 재설치 없이
+  해결된다(검증됨: 로그인 중단 후에도 등록이 유지된다). 다만 재설치는 `ON_INSTALL` 로그인을
+  다시 유발하므로 **최후수단으로는 유효하다** — 제시할 때 그렇게 명시한다.
 - Skill이 `~/.codex/config.toml`을 읽거나 쓰도록 지시하지 않는다. 유일한 예외는
   `didim-mcp-connect`가 0.1.x 레거시 블록 정리 스크립트 실행을 **승인받아** 제안하는 경우다.
 
@@ -70,7 +80,7 @@ paths:
 | 상황 | 안내 방향 |
 | --- | --- |
 | Tool 미노출 | 포털에서 해당 Tool 활성화 후 Codex 재시작 |
-| MCP 인증 실패 | `didim-mcp-connect`로 위임(= `codex mcp login didim-mcp`). 키·토큰은 묻지도 출력하지도 않는다 |
+| MCP 인증 실패 | `didim-mcp-connect`로 위임. 키·토큰은 묻지도 출력하지도 않는다 |
 | Provider credential 실패 | 관리자에게 Provider Credential 확인 요청 (`serviceKey`를 사용자에게 묻지 않는다) |
 | 상위 API 오류 | HTTP 상태 + MCP가 돌려준 안전한 오류 문구로 설명 |
 | 데이터 없음 | 성공 응답 + 빈 배열일 때만. 적용된 조건을 함께 제시 |

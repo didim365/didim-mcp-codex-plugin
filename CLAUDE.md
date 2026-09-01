@@ -43,6 +43,13 @@ README는 근거가 아니다. 충돌 시 소스를 따르고 사용자에게 �
 Skill 선택은 코드가 아니라 **SKILL.md frontmatter의 `description`** 이 결정한다. 이 프로젝트에
 라우터·디스패처는 없다.
 
+**App runtime과 CLI runtime은 별개다(검증됨).** Codex App은 셸 명령을 별도 샌드박스 OS 계정
+(`CodexSandboxOffline`/`CodexSandboxOnline`)으로 실행하므로, Skill이 실행한 중첩 `codex`는
+App과 **다른 Codex 홈**을 읽는다. 실제로 플러그인이 동작 중인 채팅에서 `codex mcp list`와
+`codex plugin list`가 0개로 나온다. App의 플러그인과 MCP OAuth 자격증명은 App 사용자
+Codex 홈(`plugins/didim-mcp`, `secrets/mcp_oauth.age`)에 있다. **중첩 CLI 출력을 App 상태의
+근거로 쓰지 않는다.** 재인증은 Tool 호출이 호스트 인증 흐름을 띄우는 경로를 정본으로 한다.
+
 Tool 목록은 **동적이다.** 이 저장소는 Tool을 정의·열거·캐시하지 않는다. 서버가 `tools/list`로
 로그인 사용자에게 허용된 것만 내려준다. 매니페스트·Skill·README에 Tool 카탈로그나 고정 개수를
 박지 않는다(특정 Tool 이름을 Skill이 참조하는 것은 예외 — `.claude/rules/skills.md` 참조).

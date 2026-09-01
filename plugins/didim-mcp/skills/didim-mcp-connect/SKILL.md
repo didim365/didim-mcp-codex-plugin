@@ -33,175 +33,228 @@ description: >-
 # Didim MCP Connect
 
 Didim MCP is **OAuth-only**. The plugin declares the hosted MCP server in its
-manifest; Codex's own MCP OAuth client performs the sign-in and owns discovery,
-PKCE, the loopback callback, token storage, and refresh.
+manifest; the Codex host's own MCP OAuth client performs the sign-in and owns
+discovery, PKCE, the callback, token storage, and refresh.
 
 **Never** ask the user for an API key, a `dv_` key, an access token, a refresh
 token, a header value, or an MCP URL. Never edit `~/.codex/config.toml`, never
 touch the credential store, and never build a Microsoft or Didim authorization
 URL by hand.
 
+## Source of truth: this session, not a nested CLI
+
+Read this before doing anything else. Getting it wrong is the single largest
+failure mode of this skill.
+
+Judge the connection **from the session you are running in**, in this order:
+
+1. **Tools exposed to this session.** If Didim MCP tools are present in your
+   own tool registry, the plugin is installed and its server is registered.
+   That is direct evidence and it outranks everything below.
+2. **The result of actually calling a tool.** Three different outcomes, three
+   different answers — see the table below.
+3. **Plugin context.** If the request arrived through
+   `plugin://didim-mcp@didim`, or this skill was selected because the Didim MCP
+   plugin is attached, the plugin exists in this session. It does **not** by
+   itself prove the sign-in completed or that tools are exposed.
+4. **`/mcp` in the composer.** A host-side view of the servers connected to
+   this session. Ask the user to check it when you need a second opinion.
+
+| Tool call outcome | What it means | What to say |
+| --- | --- | --- |
+| Succeeds | Signed in and working | Report the result |
+| Auth error (401, `unauthorized`, `authentication_required`, `invalid_token`) | Server reachable in this session, Microsoft sign-in needed | See "Sign-in is needed" |
+| Tool not present / not exposed | This session does not expose that Didim tool | Portal entitlement or exposure problem — not necessarily an auth problem |
+
+### The nested `codex` CLI is a different runtime
+
+A `codex` command you run in a shell is **not** a window into the Codex app you
+are running inside. Verified on a real installation:
+
+- The Codex app executes shell commands as a **separate sandbox OS user**
+  (`CodexSandboxOffline` / `CodexSandboxOnline` on Windows), so a nested
+  `codex` reads that user's Codex home, not the app user's.
+- The app's plugins live in the app user's Codex home
+  (`plugins/didim-mcp`, `plugins/cache/didim/didim-mcp/<version>`), and its MCP
+  OAuth credentials live in that same home, in the app's own encrypted store.
+  The sandbox user has neither.
+
+That is why, in a real Human UAT, a chat that was **demonstrably running the
+Didim MCP plugin** got `codex mcp list` = no servers and `codex plugin list` =
+no plugins. Both outputs were correct *for the shell's own runtime* and
+irrelevant to the app.
+
+So, absolutely:
+
+- **Never run `codex mcp list` or `codex plugin list` as a preflight** before
+  answering a Didim question. Call the tool.
+- **Never conclude "the plugin is not installed" or "you are not signed in"**
+  from an empty nested CLI listing.
+- If a CLI result and this session's tools disagree, **this session wins.**
+- Say `codex mcp list` shows the **CLI context's** registry — never that it
+  shows what the Codex app has.
+
 ## What you can and cannot do — say it precisely
 
-You **can**: read the connection state, call the read-only profile tool, and —
-where the environment allows shell commands — run Codex's own
-`codex mcp login` / `codex mcp logout` to start or clear the sign-in.
+You **can**: call read-only Didim tools, report the signed-in identity, explain
+exactly what state the connection is in, and trigger the host's own
+authentication flow by attempting a tool call.
 
 You **cannot**: type the Microsoft password, approve MFA, or pick the account in
-Microsoft's account picker. Those are the user's steps, inside the browser.
+Microsoft's account picker. Those happen in the user's browser.
 
 Do **not** answer with a blanket "저는 인증 화면을 조작할 수 없습니다". Name the
-specific step the user has to do, and do the rest yourself.
+specific step that is the user's, and do the rest yourself.
 
-## The authentication UI: what is actually verified
+## What the authentication UI actually is
 
-- The **install-time** sign-in is real: installing the plugin opens the
-  Microsoft OAuth flow. This is verified.
-- In the Codex App UI that was tested, a plugin-provided MCP server such as
-  `didim-mcp` appears under "플러그인 제공" **without** a Connect button,
-  Disconnect button, gear, or toggle.
+Verified:
 
-So **never tell the user to press Connect or Disconnect on the plugin screen**
-for an already-installed plugin, and never send them looking for a gear icon.
-Drive the lifecycle through the commands below instead. (This describes the UI
-as tested; a future Codex release may add such controls.)
+- **Install-time sign-in is real.** The marketplace entry sets
+  `policy.authentication: ON_INSTALL`, and installing the plugin opens the
+  Microsoft OAuth flow.
+- **A tool call on an unauthenticated OAuth MCP server triggers the host's
+  authentication.** This is the documented Codex/ChatGPT plugin behaviour: the
+  user authenticates when a tool is first invoked, driven by the server's `401`
+  + `WWW-Authenticate` (`_meta["mcp/www_authenticate"]`) response. This is the
+  natural-language re-auth path — use it.
+- Codex documents an **Authenticate** action in Settings → MCP servers "when an
+  OAuth server requires sign-in".
 
-## Step 1 — always read the state first
+Not verified, and therefore never promised:
 
-Never prescribe a fix before knowing which state you are in.
+- In the Codex app UI that was tested, the plugin-provided `didim-mcp` entry
+  under "플러그인 제공" showed **no** Connect button, Disconnect button, gear, or
+  toggle. Never send the user looking for one. (This describes the build that
+  was tested; a later release may add controls.)
+- There is **no verified way** for this skill to clear the app's stored Didim
+  sign-in. Do not claim one.
 
-```bash
-codex mcp list --json      # → auth_status: "not_logged_in" | logged in
-codex mcp get didim-mcp    # url / transport / headers
-codex plugin list          # is the plugin installed and enabled?
-```
+## Case A — "지금 Didim MCP 누구로 로그인돼있어?"
 
-These are read-only; run them under the normal policy. In a chat, `/mcp` also
-shows whether `didim-mcp` and its tools are present.
+Also: "현재 로그인 계정 알려줘", "내 MCP 계정 정보 보여줘", "who am I signed in as".
 
-**Registration and sign-in are two different things.** `didim-mcp` can be listed
-and enabled while `auth_status` is `not_logged_in`. That is not a broken
-install, and it is not a reason to reinstall anything.
+**Call the identity tool first. No CLI, no preflight.**
 
-If you cannot run shell commands in this environment, ask the user to run
-`codex mcp list` and paste the `Auth` column, or to check `/mcp`.
-
-## Step 2 — the commands (these are the only ones that exist)
-
-```bash
-codex mcp login  didim-mcp     # start / restart Microsoft OAuth sign-in
-codex mcp logout didim-mcp     # clear the stored sign-in
-```
-
-There is no `codex mcp connect`, `reconnect`, or `enable`. Do not invent one.
-
-Two behaviours to handle correctly:
-
-- **`login` blocks** until the browser callback completes, and prints
-  `Authorize ... by opening this URL in your browser:` with the URL. If you run
-  it, tell the user first that it will wait for them to finish signing in. If
-  the browser does not open on its own, give them the printed URL.
-- **`logout` can exit non-zero** when there was nothing stored to delete (e.g.
-  `failed to delete OAuth tokens from keyring`). Do **not** report that as a
-  failure — confirm the real outcome with `codex mcp list --json`.
-
-Both change authentication state: explain and get approval before running
-either. For example:
-
-> Didim MCP의 Microsoft OAuth 연결을 다시 시작합니다. 브라우저에서 Microsoft
-> 로그인 창이 열리면 계정 선택·비밀번호·MFA를 직접 완료해주세요. 진행할까요?
-
-If shell execution is unavailable, do not fall back to imaginary UI. Say so and
-hand over the exact command:
-
-> 이 환경에서는 제가 Codex CLI 명령을 직접 실행할 수 없습니다. 터미널에서 아래를
-> 실행해주세요:
-> `codex mcp login didim-mcp`
-
-## Not signed in → sign in
-
-Triggers: "Didim MCP 연결해줘", "Microsoft 로그인해줘", "MCP 인증 다시 해줘",
-"Didim 로그인 안 됐어".
-
-Confirm `auth_status: not_logged_in`, then run (or hand over)
-`codex mcp login didim-mcp`. Never remove the plugin, reinstall it, re-register
-the MCP URL, or edit `config.toml`.
-
-## The sign-in window was closed or cancelled
-
-Triggers: "아까 로그인 창 닫았는데 다시 연결해줘", "설치할 때 인증 취소했어".
-
-Installing opens the Microsoft sign-in; closing or cancelling it leaves the
-plugin **installed** and `didim-mcp` **registered**, with
-`auth_status: not_logged_in`. Verified: after an abandoned sign-in the
-registration and the installation both survive and the login can simply be run
-again.
-
-Say that plainly — users assume they must remove and re-add the plugin — then
-do the same thing as above: `codex mcp login didim-mcp`.
-
-## "다시 로그인해줘" — branch on the current state
-
-Do not blindly re-run `login`.
-
-- **`not_logged_in`** → just `codex mcp login didim-mcp`.
-- **Already signed in** → the user means "end this session and sign in again".
-  1. Show the current account (below).
-  2. Explain that the current sign-in is cleared and every Didim tool stops
-     working until the new sign-in completes.
-  3. Get explicit approval.
-  4. `codex mcp logout didim-mcp`, then `codex mcp login didim-mcp`.
-  5. Confirm the new state and identity.
-
-## Who am I signed in as?
-
-If `auth_status` is `not_logged_in`, do **not** call a tool to find out. Say:
-
-> 현재 Didim MCP에 로그인되어 있지 않습니다. Microsoft 로그인을 시작할까요?
-
-and offer the sign-in. Never mention an API key.
-
-When signed in, use whichever of these is actually present in `tools/list`, with
-`{}`:
+Use whichever of these is present in this session, with `{}`:
 
 - `didim-mcp-auth__get_current_user_profile`
 - `didim-vault__get_current_user_profile`
 
-Call only a tool that is exposed. If neither is, that is a portal entitlement
-matter, not an auth failure — say the identity tool is not enabled for this
-account and stop.
+Then:
 
-Report what the tool returns and policy allows: display name, email, role,
-status, `auth_provider`, `auth_type`, scopes. A healthy session shows
-`auth_provider = MICROSOFT`, `auth_type = OAUTH`.
+- **Success** → report what the tool returned and policy allows: display name,
+  email, role, status, `auth_provider`, `auth_type`, scopes. A healthy session
+  shows `auth_provider = MICROSOFT`, `auth_type = OAUTH`.
+- **Auth error** → "Didim MCP는 현재 세션에 연결되어 있지만 Microsoft 로그인이
+  필요합니다." Then Case C.
+- **Neither tool exposed** → "현재 세션에는 Didim MCP의 사용자 프로필 Tool이
+  노출되지 않았습니다." That is a portal entitlement matter, not an auth
+  failure. Do not say the plugin is missing.
 
 **Never** print an access token, refresh token, authorization code, session
 secret, or any Vault credential — not even truncated.
 
-## Sign in as a different Microsoft account
+## Case B — ordinary Didim tool use
 
-Triggers: "Didim MCP 계정 바꿔줘", "다른 Microsoft 계정으로 로그인해줘",
-"switch Didim MCP account".
+Use the tools exposed to this session. No connection check first. If a call
+fails, branch on the outcome table above. `didim-mcp-usage` and
+`molit-apartment-transactions` own the actual work; they delegate here only on
+an auth error.
 
-1. Show the current account, so the user sees what is being replaced.
-2. Explain the effect (sign-out, then a fresh sign-in).
-3. Get explicit approval.
-4. `codex mcp logout didim-mcp`
-5. `codex mcp login didim-mcp`
-6. Tell the user to pick **"다른 계정으로 로그인"** in the Microsoft window — the
-   browser may still hold an SSO session and would otherwise sign them straight
-   back into the same account.
-7. Confirm the new identity with the profile tool.
+## Case C — "Didim MCP 연결해줘"
 
-Account selection belongs to Microsoft and the Didim login service; do not try
-to force it from here. During a switch, never remove the plugin or marketplace,
-re-register the MCP URL, edit `config.toml`, or delete credential files.
+1. Establish the state the cheap way: call a read-only Didim tool (the identity
+   tool is ideal).
+2. **It succeeds** → "이미 연결되어 있습니다." Offer the identity as proof. Do
+   not sign anything out.
+3. **Auth error** → the sign-in is needed; go to "Sign-in is needed".
+4. **No Didim tools at all in this session** → do not declare the plugin
+   missing. Ask the user to check `/mcp` in the composer and confirm the Didim
+   MCP plugin is attached to this chat, and mention that a Codex restart loads
+   newly enabled tools. Reinstalling is a last resort, not a first answer.
 
-## Expired, 401, or "login dropped"
+## Sign-in is needed
 
-Codex refreshes tokens on its own. If it still fails, this is the same
-`logout` → `login` cycle above, with approval. No reinstall, and no cleanup
-script — unless the triage table points at legacy config.
+State it plainly, then give the paths that are actually verified:
+
+1. **Retry the tool.** The host raises its own authentication when an
+   unauthenticated OAuth MCP tool is invoked. Say what will happen: a Microsoft
+   window opens and the user completes account selection, password, and MFA
+   themselves. Then retry the call.
+2. **The host's own MCP settings.** Codex documents an **Authenticate** action
+   in Settings → MCP servers for a server that requires sign-in. Offer it as
+   the host-side path — and do not insist it exists for the plugin-provided
+   entry, because in the tested build it did not.
+3. **Reinstalling the plugin re-runs the install-time sign-in**, since the
+   marketplace policy is `ON_INSTALL`. Mention this only after 1 and 2, and
+   name it as a last resort.
+
+Never point at a Connect/Disconnect button.
+Never claim a nested `codex mcp login` fixes the app's sign-in — it does not.
+
+## Case D — "Didim MCP 다시 로그인해줘"
+
+Read the state first, then branch. Do not act blindly.
+
+- **Tool call succeeds** → the user is signed in. Say so, show the account, and
+  ask what they actually want: staying as-is, or switching accounts (Case E).
+  Do not tear down a working session for no reason.
+- **Auth error** → this is simply "Sign-in is needed" above.
+
+Be honest about the middle case: if the user is signed in and wants a *fresh*
+sign-in on the **same** account, there is no verified way for this skill to
+clear the app's stored credential. Say that, and offer the host-side paths.
+
+## Case E — "다른 Microsoft 계정으로 로그인해줘"
+
+1. Show the current account first, so the user sees what would be replaced.
+2. Be accurate about the limit: **no verified skill-side mechanism switches the
+   app's Didim sign-in.** Signing out of the app's MCP credential store is not
+   something this skill can do.
+3. Offer what is verified:
+   - the host's **Authenticate** action in Settings → MCP servers, if the build
+     offers it for this server;
+   - reinstalling the plugin, which re-triggers the `ON_INSTALL` sign-in;
+   - and, when the Microsoft window does appear, telling the user to choose
+     **"다른 계정으로 로그인"** — the browser may hold an SSO session and would
+     otherwise sign them straight back into the same account.
+4. Confirm the new identity with the profile tool afterwards.
+
+Account selection belongs to Microsoft and the Didim login service. Never remove
+the marketplace, re-register the MCP URL, edit `config.toml`, or delete
+credential files to force it.
+
+## Case F — the sign-in window was closed or cancelled
+
+Triggers: "아까 로그인 창 닫았는데 다시 연결해줘", "설치할 때 인증 취소했어".
+
+Closing or cancelling the install-time sign-in leaves the plugin **installed**
+and the server **registered** — registration and sign-in are separate things.
+Verified: after an abandoned sign-in both survive and the sign-in can simply be
+run again.
+
+Say that plainly, since users assume they must remove and re-add the plugin,
+then follow "Sign-in is needed".
+
+## The standalone Codex CLI (separate context)
+
+For a user working in a **standalone `codex` CLI** — their own terminal, their
+own Codex home — these are the real commands:
+
+```bash
+codex mcp list --json      # this CLI's registry and auth_status
+codex mcp login  didim-mcp # Microsoft OAuth sign-in for this CLI
+codex mcp logout didim-mcp # clear this CLI's stored sign-in
+```
+
+There is no `codex mcp connect`, `reconnect`, or `enable`. Do not invent one.
+`login` blocks until the browser callback completes and prints the authorize
+URL; `logout` can exit non-zero when there was nothing stored to delete.
+
+Offer these **only** when the user is asking about their own CLI, and label them
+as such. They do not manage the Codex app's plugin sign-in, and they are not the
+answer to "Didim MCP 연결해줘" inside the app.
 
 ## Upgrading from 0.1.x (API key era)
 
@@ -225,37 +278,36 @@ Explain before running and get explicit approval. The script backs up
 `[mcp_servers.didim-mcp.*]` tables (other MCP servers keep their content and
 order), and never reads back, prints, or logs the old key value.
 
-`codex mcp remove didim-mcp` has the same effect on that block.
-
-Afterwards: fully quit Codex, start it again, then sign in with
-`codex mcp login didim-mcp`.
+Afterwards: fully quit Codex, start it again, and sign in when prompted.
 
 The old timestamped `config.toml.backup-*` files still contain the retired key.
 Mention that they can be deleted; do not open them.
 
 ## Error triage — these are not the same problem
 
-| State | Evidence | Action |
+| State | Evidence (from this session) | Action |
 | --- | --- | --- |
-| Plugin or MCP not registered | `didim-mcp` absent from `codex mcp list` and `/mcp` | Confirm the plugin is installed and enabled, restart Codex. Reinstall only if it is genuinely absent |
-| Registered, never signed in | `auth_status: not_logged_in` | `codex mcp login didim-mcp` |
-| Session expired / 401 | worked before, auth errors now | `logout` → `login`, with approval |
-| Legacy 0.1.x config shadowing | old URL, or auth fails right after upgrading | Cleanup script, restart, then `login` |
-| Signed in but a tool is missing | other Didim tools work | Portal entitlement — enable it in the Didim portal, restart Codex. **Not** an auth problem |
-| Tool authorization denied | tool exists, server refuses this user | The account lacks permission. Point at the portal/admin; do not reconnect |
+| Signed in, working | tool call succeeds | Nothing to fix |
+| Registered, not signed in | tool call returns 401 / `authentication_required` | "Sign-in is needed" |
+| Session expired | worked earlier, auth errors now | Same as above; Codex refreshes on its own first |
+| Legacy 0.1.x config shadowing | auth fails right after upgrading, or an old URL appears | Cleanup script, restart, sign in |
+| One tool missing, others work | other Didim calls succeed | Portal entitlement — enable it in the Didim portal, restart Codex. **Not** auth |
+| Tool authorization denied | tool exists, server refuses this user | The account lacks permission. Point at the portal/admin; do not re-authenticate |
 | Provider credential failure | tool runs, upstream credential injection fails | Server-side Vault resource credential. Ask an admin. Never ask the user for a `serviceKey` |
+| No Didim tools in this session | nothing exposed, `/mcp` does not show `didim-mcp` | Confirm the plugin is attached and enabled, restart Codex. Reinstall only with real evidence |
 | Upstream API error | provider returned an error | Report the HTTP status and the safe error text |
 
 ## Hard rules
 
-- **Reinstalling is not a troubleshooting step.** A cancelled sign-in, an
-  expired session, and a missing tool are all fixed without it. Propose removing
-  and re-adding the plugin only with evidence that the plugin itself is absent
-  or its cache is corrupt — or when the user has no way to run `codex`, in which
-  case say explicitly that reinstalling is a last resort that re-triggers the
-  install-time sign-in.
+- **Never use a nested `codex` CLI result as evidence about the Codex app.**
+  Different runtime, different user, different credential store.
+- **Never run a CLI preflight before answering.** Call the tool.
+- **Reinstalling is not a first-line fix.** It does re-trigger the install-time
+  sign-in, so it is a legitimate last resort — say so when you offer it.
 - Never point at a Connect/Disconnect button or gear for an installed
-  plugin-provided MCP server; the tested Codex App UI does not expose them.
-- Never run `login`, `logout`, or the cleanup script without explicit approval.
+  plugin-provided MCP server; the tested Codex app UI does not expose them.
+- Never claim a mechanism you have not verified. If the product cannot do it,
+  say the product cannot do it.
+- Never run the cleanup script without explicit approval.
 - Never ask for, echo, log, or store any credential, token, or header value.
 - Never register, rewrite, or repair the MCP server entry yourself.

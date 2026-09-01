@@ -68,5 +68,9 @@ paths:
 ## 출력
 
 - 성공 메시지는 `[OK]`로 시작한다. 자격증명 값은 어떤 경로로도 출력하지 않는다.
-- 마지막에 "Codex 완전 종료 → 재시작 → `codex mcp login didim-mcp` → `/mcp` 확인" 안내를
-  유지한다. 존재하지 않는 Connect 버튼을 가리키지 않는다.
+- 마지막에 "Codex 완전 종료 → 재시작 → Microsoft 로그인 → `/mcp` 확인" 안내를 유지한다.
+- **이 스크립트의 독자는 Codex App 사용자다.** 정리 대상인 레거시 블록은 App이 읽는
+  `%USERPROFILE%\.codex\config.toml`에 있다. 따라서 출력에서 `codex mcp login`을 App의
+  로그인 방법처럼 제시하지 않는다 — App은 셸 명령을 별도 샌드박스 계정으로 실행하므로
+  중첩 CLI의 인증 저장소가 App과 다르다. 필요하면 "standalone codex CLI 전용"으로만 병기한다.
+- 존재하지 않는 Connect 버튼을 가리키지 않는다.
