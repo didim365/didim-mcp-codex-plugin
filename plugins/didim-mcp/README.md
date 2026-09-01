@@ -81,6 +81,30 @@ Enable the matching tools in the Didim user portal, then restart Codex:
 · 국토교통부 아파트 전월세 실거래가 조회 (rent). Upstream provider credentials are
 injected server-side from your OAuth identity.
 
+## Tools are dynamic
+
+The plugin does not ship a tool catalog. On every connection the MCP server
+returns, via `tools/list`, only the tools the signed-in user has enabled in the
+Didim portal. The set differs per user and changes without a plugin update.
+
+## Provider credentials are not the removed API key
+
+Two different things:
+
+- **User login credential** — the old `dv_` Didim API key. **Removed**, replaced
+  by Microsoft OAuth.
+- **Vault resource credentials** — public-data `serviceKey`, SSH credentials,
+  third-party API credentials. **Still in use.** Held in Didim Vault, injected
+  server-side after the server authorizes the OAuth identity. Never entered by
+  the user, never seen by Codex or the skills.
+
+## Direct MCP (development / UAT only)
+
+Registering `https://didimmcp-dev.didimservice.com/mcp` directly in Codex runs
+the same OAuth flow, but that is an auxiliary path for server development.
+**Disable any direct registration before running plugin UAT** — with both active
+you cannot tell which one served a request.
+
 ## Remove
 
 Remove the plugin from the Codex plugin screen. The MCP server goes with it —

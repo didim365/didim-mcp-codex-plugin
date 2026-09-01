@@ -43,6 +43,10 @@ README는 근거가 아니다. 충돌 시 소스를 따르고 사용자에게 �
 Skill 선택은 코드가 아니라 **SKILL.md frontmatter의 `description`** 이 결정한다. 이 프로젝트에
 라우터·디스패처는 없다.
 
+Tool 목록은 **동적이다.** 이 저장소는 Tool을 정의·열거·캐시하지 않는다. 서버가 `tools/list`로
+로그인 사용자에게 허용된 것만 내려준다. 매니페스트·Skill·README에 Tool 카탈로그나 고정 개수를
+박지 않는다(특정 Tool 이름을 Skill이 참조하는 것은 예외 — `.claude/rules/skills.md` 참조).
+
 ## Core Development Principles
 
 - 이 저장소를 일반 애플리케이션처럼 다루지 않는다. 프레임워크·패키지 매니저·테스트 하네스·
@@ -53,6 +57,9 @@ Skill 선택은 코드가 아니라 **SKILL.md frontmatter의 `description`** �
 - MCP URL은 `plugin.json` 한 곳에만 둔다. 스크립트나 Skill에 두 번째 사본을 만들지 않는다.
 - 사용자의 `~/.codex/config.toml`은 남의 파일이다. 이 저장소 작업 중 읽거나 쓰지 않는다.
 - 스크립트나 매니페스트 동작을 바꾸면 두 README(루트·플러그인)의 해당 서술을 같이 고친다.
+- **외부 Provider resource credential을 레거시 API Key로 오인해 지우지 않는다.** 폐지된 것은
+  사용자 로그인용 `dv_` 개인 키뿐이다. Vault에 저장된 공공데이터 `serviceKey`·SSH·외부 API
+  자격증명은 현재도 정상 기능이며, 서버가 OAuth 신원을 확인한 뒤 주입한다.
 
 ## Safety / Constraints
 
@@ -64,6 +71,8 @@ Skill 선택은 코드가 아니라 **SKILL.md frontmatter의 `description`** �
   보고하지 않는다. 정적 검토임을 명시한다.
 - 사용자가 명시적으로 요청하지 않으면 `git commit` / `git push` 하지 않는다. 상세는
   `.claude/rules/release.md`.
+- 플러그인 UAT 중에는 Direct MCP 등록(`didim-mcp-oauth-uat` 등)을 **동시에 켜두지 않는다.**
+  둘 다 켜진 상태의 성공은 플러그인 경로의 PASS 근거가 되지 않는다.
 
 ## Verification
 
