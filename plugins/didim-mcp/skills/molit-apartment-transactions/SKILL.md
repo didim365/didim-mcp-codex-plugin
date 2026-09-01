@@ -168,8 +168,8 @@ Keep MCP results separate from your own analysis.
 
 - **Tool not enabled** → 필요한 MCP Tool이 현재 내 도구에 없습니다 (portal + restart).
 - **MCP auth failure** → Didim MCP 연결이 만료되었거나 인증에 실패했습니다.
-  플러그인의 Connect 로 Microsoft 계정 로그인을 다시 진행해야 합니다
-  (`didim-mcp-connect` skill). Never request or print any key, token, or header.
+  Microsoft 계정으로 다시 로그인해야 합니다 — `didim-mcp-connect` skill에 위임하고
+  여기서 직접 처리하지 않는다. Never request or print any key, token, or header.
 - **Provider credential failure** → 공공데이터 API 인증정보 주입에 실패했습니다.
   관리자에게 Provider Credential 상태 확인이 필요합니다. Never ask the user for a
   `serviceKey`.
@@ -181,7 +181,7 @@ Keep MCP results separate from your own analysis.
 
 - Never generate legal-dong codes from memory; only from the code tool.
 - Never accept or print a `serviceKey`, access token, or any auth header value.
-  The user never supplies a Didim credential; sign-in is handled by Connect.
+  The user never supplies a Didim credential; Codex runs the OAuth sign-in.
 - Never show Vault resource IDs in normal user replies; never log credentials.
 - Validate any user-supplied code's format, and verify name↔code agreement via
   the code tool.

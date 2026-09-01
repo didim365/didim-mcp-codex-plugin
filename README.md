@@ -26,8 +26,9 @@ Codex에서 **Didim MCP 서버**를 Microsoft 계정으로 연결해 사용하�
    ```
 5. **Git ref**와 **Sparse 경로**는 비워 두고 **마켓플레이스 추가**를 클릭합니다.
 6. 마켓플레이스 목록에서 **Didim MCP**를 **설치**합니다.
-7. **Connect(연결)** 를 누릅니다. 브라우저가 열립니다.
-8. **Microsoft 계정으로 로그인**하고, **Didim 동의 화면**을 승인합니다.
+7. 설치 직후 **Microsoft 로그인 화면이 자동으로 열립니다.** 로그인하고 **Didim 동의 화면**을
+   승인합니다.
+8. 창이 닫혔거나 취소했다면 그냥 다음 항목으로 넘어가세요 — 재설치할 필요 없습니다.
 9. Codex를 새로 시작하고 **새 채팅**에서 `/mcp`로 `didim-mcp` 연결을 확인합니다.
 10. 이후 Didim 관련 질문에는 `didim-mcp-usage` / `molit-apartment-transactions`
     Skill이 자동 적용됩니다.
@@ -64,16 +65,29 @@ codex mcp list                # Auth 열이 "Logged in" 인지 확인
 | 인증 만료 · 401 오류 | `Didim MCP 다시 인증해줘` |
 
 **설치 중 로그인 창을 닫아도 플러그인은 정상 설치된 상태입니다.** 등록(registration)과
-로그인(sign-in)은 별개이므로, 삭제·재설치 없이 **Connect만 다시 누르면** 됩니다.
-Codex CLI를 별도 설치한 사용자는 `codex mcp login didim-mcp` / `codex mcp logout didim-mcp`를
-사용할 수 있습니다. 인증 상태를 바꾸는 명령이므로 Skill이 실행 전에 설명하고 승인을 받습니다.
+로그인(sign-in)은 별개이므로 삭제·재설치가 필요 없습니다.
+
+인증 lifecycle은 Codex의 공식 명령으로 처리됩니다.
+
+```bash
+codex mcp list --json        # auth_status 확인 (read-only)
+codex mcp login  didim-mcp   # 로그인 / 재로그인 — 브라우저가 열립니다
+codex mcp logout didim-mcp   # 로그아웃 (계정 변경 시 login 앞에 실행)
+```
+
+Skill이 상태를 먼저 확인하고, 인증 상태를 바꾸는 명령은 **실행 전에 설명하고 승인을
+받습니다.** 실행이 불가능한 환경이면 위 명령을 그대로 알려줍니다.
 
 계정을 바꿀 때 브라우저에 기존 Microsoft SSO 세션이 남아 있으면 같은 계정으로 자동
 로그인될 수 있습니다. 그럴 때는 Microsoft 로그인 화면에서 **"다른 계정으로 로그인"** 을
 선택하세요.
 
-> Skill 자동 선택은 표현에 따라 달라질 수 있습니다. 100% 보장되지는 않으며, 자동으로 잡히지
-> 않으면 Codex 앱의 플러그인 화면에서 **Connect / Disconnect** 를 직접 사용하면 됩니다.
+> **현재 확인된 Codex 앱 UI에서는** 설치된 플러그인 제공 MCP(`didim-mcp`)에 Connect /
+> Disconnect 버튼이나 톱니 아이콘이 노출되지 않습니다. 설치 시점의 OAuth 화면은 실제로
+> 뜹니다. 이후의 재로그인·계정 변경은 위 명령으로 하세요. (향후 Codex 버전에서 UI가
+> 추가될 수 있습니다.)
+>
+> Skill 자동 선택은 표현에 따라 달라질 수 있으며 100% 보장되지 않습니다.
 
 ---
 
@@ -91,7 +105,7 @@ X-Didim-Vault-Api-Key = "<사용자가 입력했던 dv_ API Key>"
 ```
 
 **이 블록이 남아 있으면 플러그인이 제공하는 OAuth 서버를 가립니다.** Codex는 계속 예전
-설정으로 접속하고, Connect는 뜨지 않으며, Didim 서버는 더 이상 사용자 API Key를 받지 않으므로
+설정으로 접속하고, OAuth 로그인이 시작되지 않으며, Didim 서버는 더 이상 사용자 API Key를 받지 않으므로
 인증이 실패합니다. 업그레이드 후에는 반드시 아래 정리 스크립트를 한 번 실행하세요.
 
 - 더블클릭: `%USERPROFILE%\.codex\plugins\cache\didim\didim-mcp\<version>\scripts\migrate-didim-mcp.cmd`
@@ -110,7 +124,7 @@ config.toml 읽기 → 예전 didim-mcp 블록 탐지 → 없으면 그대로 �
 ```
 
 - 예전 키 값은 **읽어서 비교하거나 출력하지 않습니다.** `legacy credential removed` 만 알립니다.
-- 정리 후: Codex 완전 종료 → 재실행 → **Connect** → Microsoft 로그인.
+- 정리 후: Codex 완전 종료 → 재실행 → `codex mcp login didim-mcp` → Microsoft 로그인.
 - 이전에 생성된 `config.toml.backup-*` 파일에는 예전 키가 그대로 남아 있습니다. 필요 없으면
   삭제하세요.
 
@@ -189,7 +203,7 @@ RAG로 사내 문서에서 휴가 규정 검색해줘
 https://didimmcp-dev.didimservice.com/mcp
 ```
 
-Codex에 이 URL을 MCP 서버로 직접 등록해도 동일한 OAuth Connect가 동작합니다. 다만
+Codex에 이 URL을 MCP 서버로 직접 등록해도 동일한 OAuth 로그인이 동작합니다. 다만
 **플러그인 최종 검증 시에는 Direct MCP 등록을 반드시 비활성화**하세요. 같은 서버가 두 경로로
 동시에 붙어 있으면 어느 쪽이 동작한 것인지 판별할 수 없습니다.
 
@@ -233,7 +247,7 @@ Codex에 이 URL을 MCP 서버로 직접 등록해도 동일한 OAuth Connect가
 
 - MCP URL은 플러그인 매니페스트에 있으므로, URL이 바뀌어도 **플러그인 업데이트만으로 반영**됩니다.
 - OAuth 연결(토큰)은 업데이트로 지워지지 않습니다. 만료되면 Codex가 refresh 하고, 실패하면
-  Connect를 다시 누르면 됩니다.
+  `codex mcp login didim-mcp`로 다시 로그인하면 됩니다.
 - 0.1.x → 0.2.x 업그레이드는 위의 **레거시 정리**를 한 번 수행해야 합니다.
 
 **(선택) Codex CLI 사용자**
@@ -255,8 +269,7 @@ codex plugin remove didim-mcp@didim
 # (선택) codex plugin marketplace remove didim
 ```
 
-저장된 OAuth 자격증명까지 지우려면 플러그인의 **Disconnect**를 사용하거나, CLI에서
-`codex mcp logout didim-mcp` 를 실행합니다.
+저장된 OAuth 자격증명까지 지우려면 `codex mcp logout didim-mcp` 를 실행합니다.
 
 ---
 
@@ -279,14 +292,14 @@ codex plugin remove didim-mcp@didim
 | 증상 | 확인 / 조치 |
 | --- | --- |
 | 설치했는데 `/mcp`에 `didim-mcp`가 없음 | Codex를 **완전히 재시작**하고 **새 채팅**을 여세요. 플러그인 제공 MCP는 기동 시점에 반영됩니다 |
-| 설치 중 로그인 창을 닫았음 | **재설치하지 마세요.** 새 채팅에서 `Didim MCP 연결해줘` 또는 플러그인 화면의 **Connect** |
+| 설치 중 로그인 창을 닫았음 | **재설치하지 마세요.** 새 채팅에서 `Didim MCP 연결해줘`, 또는 `codex mcp login didim-mcp` |
 | 지금 로그인된 계정을 모르겠음 | `지금 Didim MCP 누구로 로그인돼있어?` — 로그인 상태면 계정·role·상태를 알려줍니다 |
-| Connect 버튼이 안 보임 | 플러그인이 설치·활성 상태인지 확인 → Codex 재시작. 그래도 없으면 아래 "예전 설정" 항목 |
-| 업그레이드 후 인증이 계속 실패함 | 0.1.x가 남긴 `[mcp_servers.didim-mcp]`가 플러그인 설정을 가리고 있습니다. `migrate-didim-mcp.cmd` 실행 후 재시작 → Connect |
+| 플러그인 화면에 Connect 버튼이 없음 | **정상입니다.** 현재 Codex 앱 UI는 플러그인 제공 MCP에 Connect/Disconnect를 노출하지 않습니다. `codex mcp login didim-mcp` 를 쓰세요 |
+| 업그레이드 후 인증이 계속 실패함 | 0.1.x가 남긴 `[mcp_servers.didim-mcp]`가 플러그인 설정을 가리고 있습니다. `migrate-didim-mcp.cmd` 실행 후 재시작 → `codex mcp login didim-mcp` |
 | 예전 `X-Didim-Vault-Api-Key` / `http://49.50.138.22:31083/mcp/` 로 붙어 있음 | 같은 원인입니다. 위 정리 스크립트를 실행하세요 |
-| 다른 Microsoft 계정으로 바꾸고 싶음 | `Didim MCP 다른 Microsoft 계정으로 로그인해줘` → Disconnect 후 Connect. 같은 계정으로 자동 로그인되면 Microsoft 화면에서 **"다른 계정으로 로그인"** 선택 |
+| 다른 Microsoft 계정으로 바꾸고 싶음 | `Didim MCP 다른 Microsoft 계정으로 로그인해줘` → `codex mcp logout didim-mcp` 후 `codex mcp login didim-mcp`. 같은 계정으로 자동 로그인되면 Microsoft 화면에서 **"다른 계정으로 로그인"** 선택 |
 | 연결은 됐는데 특정 Tool이 없음 | 인증 문제가 아닙니다. **Didim 사용자 포털에서 해당 Tool을 활성화**한 뒤 Codex 재시작 |
-| 한동안 쓰다가 갑자기 인증 실패 | Codex가 refresh를 시도합니다. 실패하면 Disconnect → Connect |
+| 한동안 쓰다가 갑자기 인증 실패 | Codex가 refresh를 시도합니다. 실패하면 `codex mcp logout didim-mcp` → `codex mcp login didim-mcp` |
 | 설치가 안 됨 | 플러그인 화면에 **Didim** 마켓플레이스가 추가됐는지 확인 (CLI 사용자는 `codex plugin marketplace list`) |
 | 스크립트 실행 시 한글이 `??`/깨져서 나옴 | Windows PowerShell 5.1의 UTF-8 처리 문제입니다. 최신 버전으로 업데이트하세요. 스크립트가 UTF-8 BOM + `chcp 65001` + 콘솔 인코딩을 적용합니다 |
 

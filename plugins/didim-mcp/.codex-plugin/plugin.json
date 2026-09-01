@@ -1,7 +1,7 @@
 {
   "name": "didim-mcp",
-  "version": "0.2.1",
-  "description": "Connect Didim MCP with your Microsoft account. The plugin registers the hosted Didim MCP server and Codex handles the OAuth sign-in; no API key is ever entered.",
+  "version": "0.2.2",
+  "description": "Use Didim MCP with your Microsoft account. The plugin registers the hosted Didim MCP server and Codex runs the OAuth sign-in; no API key is ever entered.",
   "author": {
     "name": "Didim365"
   },
@@ -15,7 +15,7 @@
   "interface": {
     "displayName": "Didim MCP",
     "shortDescription": "Use Didim MCP tools with your Microsoft account.",
-    "longDescription": "Registers the hosted Didim MCP server and ships skills for safe tool use and MOLIT apartment trade/rent real-transaction queries. Sign in through Connect with your Microsoft account — Codex runs the OAuth flow for you, so there is no API key to create, copy, or paste. Only the tools you enabled in the Didim portal are exposed.",
+    "longDescription": "Registers the hosted Didim MCP server and ships skills for safe tool use and MOLIT apartment trade/rent real-transaction queries. Codex runs the Microsoft OAuth sign-in for you, so there is no API key to create, copy, or paste. Skills handle sign-in, re-authentication, checking the current account, and switching Microsoft accounts. Only the tools you enabled in the Didim portal are exposed.",
     "developerName": "Didim365",
     "category": "Productivity",
     "capabilities": [
@@ -24,6 +24,7 @@
       "Write"
     ],
     "defaultPrompt": [
+      "지금 Didim MCP 누구로 로그인돼있어?",
       "내가 쓸 수 있는 Didim MCP 도구를 보여줘",
       "구로구 지난달 아파트 매매 실거래가 알려줘"
     ]

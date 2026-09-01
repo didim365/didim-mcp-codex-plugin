@@ -25,12 +25,25 @@ It also ships:
 For full installation, connection, update, and removal instructions, see the
 [repository root README](../../README.md).
 
-## Connect
+## Sign in
 
-Install the plugin, press **Connect**, sign in with your Microsoft account, then
-restart Codex and run `/mcp` to confirm `didim-mcp`.
+Installing the plugin opens the Microsoft sign-in. Complete it, restart Codex,
+and run `/mcp` to confirm `didim-mcp`.
 
-If Connect is not offered, ask Codex in a new chat:
+To sign in later, or again:
+
+```bash
+codex mcp list --json        # auth_status (read-only)
+codex mcp login  didim-mcp   # sign in / re-authenticate
+codex mcp logout didim-mcp   # sign out (run before login to switch accounts)
+```
+
+**In the Codex App UI as tested, an installed plugin-provided MCP server has no
+Connect button, Disconnect button, gear, or toggle.** The install-time sign-in
+is real; everything after it goes through the commands above. A future Codex
+release may add such controls.
+
+Or just ask Codex in a new chat:
 
 ```
 Didim MCP 연결해줘
@@ -42,7 +55,8 @@ The `didim-mcp-connect` skill checks the actual state and walks through the fix.
 
 Installing opens the Microsoft sign-in. Closing or cancelling it leaves the
 plugin installed and the MCP server registered — registration and sign-in are
-separate. Just start the sign-in again: **Connect**, or ask in a new chat.
+separate. Just start the sign-in again with `codex mcp login didim-mcp`, or ask
+in a new chat.
 
 ### Account management, in natural language
 
@@ -53,11 +67,16 @@ separate. Just start the sign-in again: **Connect**, or ask in a new chat.
 | Switch Microsoft account | `Didim MCP 다른 Microsoft 계정으로 로그인해줘` |
 | Re-authenticate after expiry | `Didim MCP 다시 인증해줘` |
 
-Users of the standalone `codex` CLI can run `codex mcp login didim-mcp` and
-`codex mcp logout didim-mcp`; the skill explains and asks for approval first,
-since both change authentication state. Skill auto-selection depends on
-phrasing and is not guaranteed — Connect/Disconnect in the plugin screen is
-always available as a fallback.
+The skill checks `auth_status` first, then explains and asks for approval
+before running `login` or `logout`, since both change authentication state. If
+it cannot run commands in your environment it hands you the exact command
+instead. Skill auto-selection depends on phrasing and is not guaranteed — the
+commands above always work directly.
+
+Two behaviours worth knowing: `codex mcp login` **blocks** until you finish in
+the browser (and prints the URL if the browser does not open), and
+`codex mcp logout` can exit non-zero when there was nothing stored to remove —
+check `codex mcp list --json` for the real state.
 
 ## Upgrading from 0.1.x — required once
 
@@ -77,7 +96,8 @@ prints, or logs the old key — only `legacy credential removed`. It is idempote
 if there is no legacy block it changes nothing.
 
 By default it does **not** touch any process; pass `-KillCodexProcesses` to opt
-into closing exact-match `codex` processes. Restart Codex, then press Connect.
+into closing exact-match `codex` processes. Restart Codex, then run
+`codex mcp login didim-mcp`.
 
 Users with the standalone `codex` CLI can run `codex mcp remove didim-mcp`
 instead.
@@ -130,7 +150,7 @@ you cannot tell which one served a request.
 
 Remove the plugin from the Codex plugin screen. The MCP server goes with it —
 there is no `config.toml` entry to clean up. To drop the stored OAuth
-credentials, use **Disconnect** (or `codex mcp logout didim-mcp`).
+credentials, run `codex mcp logout didim-mcp`.
 
 ## Safety
 

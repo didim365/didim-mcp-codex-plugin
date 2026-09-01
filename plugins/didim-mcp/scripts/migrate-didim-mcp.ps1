@@ -6,11 +6,11 @@
 .DESCRIPTION
     Didim MCP now connects over OAuth. The plugin declares the hosted MCP server
     itself (see .codex-plugin/plugin.json) and Codex signs you in through
-    Connect, so no API key or auth header is configured any more.
+    OAuth sign-in, so no API key or auth header is configured any more.
 
     A leftover [mcp_servers.didim-mcp] block in config.toml — written by plugin
     versions 0.1.x — SHADOWS the plugin-provided server: Codex keeps using the
-    old URL and the old X-Didim-Vault-Api-Key header, and the OAuth Connect
+    old URL and the old X-Didim-Vault-Api-Key header, and the OAuth sign-in
     never happens. This script deletes that block so the plugin's OAuth server
     takes over.
 
@@ -33,7 +33,7 @@
 
 .NOTES
     No administrator privileges required. Restart Codex after running, then use
-    Connect to sign in with your Microsoft account.
+    'codex mcp login didim-mcp' to sign in with your Microsoft account.
 #>
 [CmdletBinding()]
 param(
@@ -157,7 +157,8 @@ $cfgPath  = Join-Path $codexDir 'config.toml'
 
 if (-not (Test-Path -LiteralPath $cfgPath)) {
     Write-Host 'No config.toml found; nothing to clean up.' -ForegroundColor Green
-    Write-Host 'The plugin already provides the Didim MCP server. Use Connect to sign in.'
+    Write-Host 'The plugin already provides the Didim MCP server.'
+    Write-Host 'Sign in with:  codex mcp login didim-mcp'
     exit 0
 }
 
@@ -166,7 +167,8 @@ $existing = [System.IO.File]::ReadAllText($cfgPath, [System.Text.Encoding]::UTF8
 $hasBlock = ($existing -match '(?m)^\s*\[\s*mcp_servers\.didim-mcp(\s*\]|\.[^\]]+\])')
 if (-not $hasBlock) {
     Write-Host 'No legacy Didim MCP configuration was found; nothing to clean up.' -ForegroundColor Green
-    Write-Host 'The plugin already provides the Didim MCP server. Use Connect to sign in.'
+    Write-Host 'The plugin already provides the Didim MCP server.'
+    Write-Host 'Sign in with:  codex mcp login didim-mcp'
     exit 0
 }
 
@@ -210,7 +212,7 @@ Write-Host ''
 Write-Host 'Next steps:' -ForegroundColor Yellow
 Write-Host '  1. Fully quit ALL Codex windows.'
 Write-Host '  2. Start the Codex app again.'
-Write-Host '  3. Open the Didim MCP plugin and press Connect, then sign in with your'
-Write-Host '     Microsoft account. No API key is needed any more.'
+Write-Host '  3. Sign in:  codex mcp login didim-mcp'
+Write-Host '     Complete the Microsoft login in the browser. No API key is needed.'
 Write-Host '  4. Run  /mcp  and confirm "didim-mcp" is connected.'
 Write-Host ''

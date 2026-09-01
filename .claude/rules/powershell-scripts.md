@@ -11,7 +11,7 @@ paths:
 ## 이 스크립트의 유일한 역할
 
 0.1.x가 남긴 레거시 `[mcp_servers.didim-mcp]` / `[mcp_servers.didim-mcp.*]` 블록 제거.
-그 블록이 남아 있으면 `plugin.json`이 선언한 OAuth MCP 서버를 **가려서**(shadow) Connect가
+그 블록이 남아 있으면 `plugin.json`이 선언한 OAuth MCP 서버를 **가려서**(shadow) OAuth 로그인이
 동작하지 않는다(검증됨: 블록이 있으면 `codex mcp list`에 플러그인 서버가 아예 나오지 않는다).
 
 여기에 **MCP 서버 등록 기능을 다시 넣지 않는다.** 등록은 `plugin.json`의 `mcpServers`가 한다.
@@ -68,4 +68,5 @@ paths:
 ## 출력
 
 - 성공 메시지는 `[OK]`로 시작한다. 자격증명 값은 어떤 경로로도 출력하지 않는다.
-- 마지막에 "Codex 완전 종료 → 재시작 → **Connect** → `/mcp` 확인" 안내를 유지한다.
+- 마지막에 "Codex 완전 종료 → 재시작 → `codex mcp login didim-mcp` → `/mcp` 확인" 안내를
+  유지한다. 존재하지 않는 Connect 버튼을 가리키지 않는다.

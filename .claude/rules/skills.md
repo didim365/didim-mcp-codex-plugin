@@ -22,9 +22,12 @@ paths:
 ## 인증 (OAuth-only)
 
 - Skill은 **자격증명을 요구·수집·출력하지 않는다.** API Key 입력, `dv_` 키, 토큰 붙여넣기,
-  헤더 설정, MCP URL 직접 입력을 안내하는 문장을 넣지 않는다. 연결은 플러그인의 Connect →
-  Microsoft 로그인 → Didim 동의로만 이루어지며 Codex가 수행한다.
-- 인증 실패 안내의 종착점은 항상 `didim-mcp-connect` Skill(= Connect 재시도)이다. 로그인 계정
+  헤더 설정, MCP URL 직접 입력을 안내하는 문장을 넣지 않는다. 연결은 Codex 내장 MCP OAuth
+  (Microsoft 로그인 → Didim 동의)로만 이루어진다.
+- **설치된 플러그인 제공 MCP에 Connect/Disconnect 버튼·톱니가 있다고 안내하지 않는다.**
+  Human UAT에서 확인한 Codex App UI에는 존재하지 않는다(설치 시점 OAuth 흐름은 실재한다).
+  인증 lifecycle은 `codex mcp login/logout didim-mcp`로 안내한다.
+- 인증 실패 안내의 종착점은 항상 `didim-mcp-connect` Skill(= OAuth 재로그인)이다. 로그인 계정
   조회·계정 변경·취소된 로그인 재시도도 전부 `didim-mcp-connect` 소관이며, 다른 Skill은 위임만
   한다.
 - **재설치를 기본 처방으로 쓰지 않는다.** 취소된 로그인·만료된 세션·미노출 Tool은 재설치 없이
@@ -67,7 +70,7 @@ paths:
 | 상황 | 안내 방향 |
 | --- | --- |
 | Tool 미노출 | 포털에서 해당 Tool 활성화 후 Codex 재시작 |
-| MCP 인증 실패 | `didim-mcp-connect`로 재연결(Connect → Microsoft 로그인). 키·토큰은 묻지도 출력하지도 않는다 |
+| MCP 인증 실패 | `didim-mcp-connect`로 위임(= `codex mcp login didim-mcp`). 키·토큰은 묻지도 출력하지도 않는다 |
 | Provider credential 실패 | 관리자에게 Provider Credential 확인 요청 (`serviceKey`를 사용자에게 묻지 않는다) |
 | 상위 API 오류 | HTTP 상태 + MCP가 돌려준 안전한 오류 문구로 설명 |
 | 데이터 없음 | 성공 응답 + 빈 배열일 때만. 적용된 조건을 함께 제시 |
