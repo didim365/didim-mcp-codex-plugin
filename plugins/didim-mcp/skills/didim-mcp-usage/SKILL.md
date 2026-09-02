@@ -45,9 +45,12 @@ If no Didim tools are exposed in the current session, or a needed tool is
 missing:
 
 - Do **not** repeatedly retry the same failing call or invent a fallback.
-- Distinguish the two causes: an **auth** problem (delegate as above) versus a
-  **portal entitlement** problem — a single missing tool while other Didim tools
-  work means the user must enable it in the Didim portal and restart Codex.
+- Count first. **No Didim tool at all** means the server is unavailable to this
+  session — delegate to `didim-mcp-connect`. Do not tell the user to enable
+  tools in the portal, and do not treat `/mcp` showing 인증됨 as proof that the
+  connection works.
+- **A single missing tool while other Didim tools work** is the portal
+  entitlement case: the user enables it in the Didim portal and restarts Codex.
 
 ## Rules
 

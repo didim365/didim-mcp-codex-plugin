@@ -64,7 +64,8 @@ Judge the connection **from the session you are running in**, in this order:
 | --- | --- | --- |
 | Succeeds | Signed in and working | Report the result |
 | Auth error (401, `unauthorized`, `authentication_required`, `invalid_token`) | Server reachable in this session, Microsoft sign-in needed | See "Sign-in is needed" |
-| Tool not present / not exposed | This session does not expose that Didim tool | Portal entitlement or exposure problem — not necessarily an auth problem |
+| Tool not present, **other Didim tools work** | This session does not expose that one tool | Portal entitlement — not an auth problem |
+| **No Didim tool at all** | The server itself is unavailable to this session | See "No Didim tools at all" — do **not** call it a portal entitlement problem |
 
 ### The nested `codex` CLI is a different runtime
 
@@ -148,9 +149,10 @@ Then:
   shows `auth_provider = MICROSOFT`, `auth_type = OAUTH`.
 - **Auth error** → "Didim MCP는 현재 세션에 연결되어 있지만 Microsoft 로그인이
   필요합니다." Then Case C.
-- **Neither tool exposed** → "현재 세션에는 Didim MCP의 사용자 프로필 Tool이
-  노출되지 않았습니다." That is a portal entitlement matter, not an auth
-  failure. Do not say the plugin is missing.
+- **Neither tool exposed** → first check whether *any* Didim tool is exposed.
+  If some are, that one is a portal entitlement matter, not an auth failure.
+  If **none** are, this is not about entitlements at all — see "No Didim tools
+  at all". Either way, do not say the plugin is missing.
 
 **Never** print an access token, refresh token, authorization code, session
 secret, or any Vault credential — not even truncated.
@@ -169,10 +171,34 @@ an auth error.
 2. **It succeeds** → "이미 연결되어 있습니다." Offer the identity as proof. Do
    not sign anything out.
 3. **Auth error** → the sign-in is needed; go to "Sign-in is needed".
-4. **No Didim tools at all in this session** → do not declare the plugin
-   missing. Ask the user to check `/mcp` in the composer and confirm the Didim
-   MCP plugin is attached to this chat, and mention that a Codex restart loads
-   newly enabled tools. Reinstalling is a last resort, not a first answer.
+4. **No Didim tools at all in this session** → see "No Didim tools at all".
+
+## No Didim tools at all
+
+Zero Didim tools in this session means the **server is unavailable to the
+session**, not that the user lost portal entitlements. Say so, and never
+answer this state with "포털에서 Tool을 활성화해 달라고 요청하세요."
+
+The verified cause, seen on a real installation: Codex holds a stored Didim
+sign-in, tries to refresh it at startup, and the Didim auth server rejects the
+refresh token. The MCP server then never starts, so no tool is ever exposed —
+while `/mcp` still shows `didim-mcp` as **사용함 / 인증됨(OAuth)**, because that
+line reflects *stored credentials*, not a successful refresh. A `/mcp` badge is
+therefore not proof that the connection works.
+
+Tell the user, in this order:
+
+1. The sign-in Codex has stored is no longer accepted; it has to be renewed.
+   This is expected after a token expires or is revoked — it is not a portal
+   permission change and not a plugin defect.
+2. Fully quit and restart Codex, then use a Didim tool. Invoking a tool is what
+   makes the host raise its Microsoft sign-in.
+3. If Settings → MCP servers offers **Authenticate** for `didim-mcp`, use it.
+4. Only if neither renews the sign-in: reinstall the plugin, which re-runs the
+   install-time sign-in. Say plainly that this is the last resort.
+
+Portal entitlement is the right answer **only** when other Didim tools are
+working and a specific one is missing.
 
 ## Sign-in is needed
 
@@ -294,7 +320,7 @@ Mention that they can be deleted; do not open them.
 | One tool missing, others work | other Didim calls succeed | Portal entitlement — enable it in the Didim portal, restart Codex. **Not** auth |
 | Tool authorization denied | tool exists, server refuses this user | The account lacks permission. Point at the portal/admin; do not re-authenticate |
 | Provider credential failure | tool runs, upstream credential injection fails | Server-side Vault resource credential. Ask an admin. Never ask the user for a `serviceKey` |
-| No Didim tools in this session | nothing exposed, `/mcp` does not show `didim-mcp` | Confirm the plugin is attached and enabled, restart Codex. Reinstall only with real evidence |
+| No Didim tools in this session | nothing exposed — even when `/mcp` shows `didim-mcp` as 사용함/인증됨 | Server unavailable to the session, usually a stored sign-in the server no longer accepts. See "No Didim tools at all". **Never** answer this with portal entitlement |
 | Upstream API error | provider returned an error | Report the HTTP status and the safe error text |
 
 ## Hard rules

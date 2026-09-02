@@ -315,8 +315,9 @@ codex plugin remove didim-mcp@didim
 | 업그레이드 후 인증이 계속 실패함 | 0.1.x가 남긴 `[mcp_servers.didim-mcp]`가 플러그인 설정을 가리고 있습니다. `migrate-didim-mcp.cmd` 실행 후 Codex 재시작 |
 | 예전 `X-Didim-Vault-Api-Key` / `http://49.50.138.22:31083/mcp/` 로 붙어 있음 | 같은 원인입니다. 위 정리 스크립트를 실행하세요 |
 | 다른 Microsoft 계정으로 바꾸고 싶음 | 현재 앱에서 확인된 확실한 경로는 **플러그인 재설치**(설치 시점 로그인이 다시 실행됨)입니다. Microsoft 화면이 뜨면 **"다른 계정으로 로그인"** 을 선택하세요 |
-| 연결은 됐는데 특정 Tool이 없음 | 인증 문제가 아닙니다. **Didim 사용자 포털에서 해당 Tool을 활성화**한 뒤 Codex 재시작 |
-| 한동안 쓰다가 갑자기 인증 실패 | Codex가 먼저 refresh를 시도합니다. Didim Tool을 다시 호출해 로그인 요구가 뜨는지 확인하세요 |
+| **Didim Tool이 하나도 안 보임** (`/mcp`에는 `사용함 / 인증됨(OAuth)`) | **포털 권한 문제가 아닙니다.** Codex가 저장해 둔 로그인을 갱신하려다 서버에서 거부되면 MCP 서버가 아예 기동하지 않고, 그래도 `/mcp` 배지는 `인증됨`으로 남습니다. Codex를 완전히 재시작한 뒤 Didim Tool을 호출해 로그인 창이 뜨는지 확인하세요. 그래도 안 되면 플러그인 재설치(설치 시점 로그인 재실행) |
+| 연결은 됐는데 **특정** Tool만 없음 (다른 Didim Tool은 정상) | 인증 문제가 아닙니다. **Didim 사용자 포털에서 해당 Tool을 활성화**한 뒤 Codex 재시작 |
+| 한동안 쓰다가 갑자기 인증 실패 | Codex가 먼저 refresh를 시도하고, 서버가 그 refresh를 거부하면 재로그인이 필요합니다. Didim Tool을 다시 호출해 로그인 요구가 뜨는지 확인하세요 |
 | 설치가 안 됨 | 플러그인 화면에 **Didim** 마켓플레이스가 추가됐는지 확인 (CLI 사용자는 `codex plugin marketplace list`) |
 | 스크립트 실행 시 한글이 `??`/깨져서 나옴 | Windows PowerShell 5.1의 UTF-8 처리 문제입니다. 최신 버전으로 업데이트하세요. 스크립트가 UTF-8 BOM + `chcp 65001` + 콘솔 인코딩을 적용합니다 |
 

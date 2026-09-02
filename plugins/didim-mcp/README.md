@@ -68,6 +68,17 @@ The skill judges the connection from the tools exposed to the current session
 and from what a tool call actually returns. Skill auto-selection depends on
 phrasing and is not guaranteed.
 
+### No Didim tools at all is not a portal problem
+
+If a session exposes **zero** Didim tools, the server is unavailable to that
+session. Verified cause: Codex holds a stored sign-in, its refresh is rejected
+by the Didim auth server, the MCP server never starts, and no tool is exposed —
+while `/mcp` still shows `didim-mcp` as connected and authenticated, because
+that line reflects stored credentials rather than a successful refresh. Restart
+Codex and invoke a Didim tool so the host raises the sign-in; reinstall only as
+a last resort. Portal entitlement is the right answer only when other Didim
+tools work and one specific tool is missing.
+
 ### `codex mcp list` is not the app's state
 
 The Codex App runs shell commands as a **separate sandbox OS user**, so a
