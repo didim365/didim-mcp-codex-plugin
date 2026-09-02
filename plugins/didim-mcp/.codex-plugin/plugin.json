@@ -1,6 +1,6 @@
 {
   "name": "didim-mcp",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Use Didim MCP with your Microsoft account. The plugin registers the hosted Didim MCP server and Codex runs the OAuth sign-in; no API key is ever entered.",
   "author": {
     "name": "Didim365"
@@ -23,6 +23,7 @@
       "Read",
       "Write"
     ],
+    "websiteURL": "https://didimmcp-dev.didimservice.com/",
     "defaultPrompt": [
       "지금 Didim MCP 누구로 로그인돼있어?",
       "내가 쓸 수 있는 Didim MCP 도구를 보여줘",
