@@ -22,8 +22,14 @@ It also ships:
 - **Scripts** — `scripts/migrate-didim-mcp.ps1` / `.cmd`, for users upgrading
   from 0.1.x.
 
-For full installation, connection, update, and removal instructions, see the
-[repository root README](../../README.md).
+Full installation, connection, update, and removal instructions (in Korean) live
+in the repository README:
+<https://github.com/didim365/didim-mcp-codex-plugin#readme>. The installed
+plugin directory does not contain that file, so this page stays self-contained.
+
+Tools are enabled per user in the Didim MCP portal:
+<https://didimmcp-dev.didimservice.com/>. The current target is the **dev**
+environment.
 
 ## Sign in
 
@@ -43,11 +49,21 @@ skill reads the state from the tools exposed to the session and walks through
 the rest. Codex also documents an **Authenticate** action in Settings → MCP
 servers for a server that requires sign-in.
 
+### When a sign-in is needed, in this order
+
+1. **Invoke a Didim tool.** An unauthenticated OAuth MCP tool call makes the host
+   raise its own sign-in. This is the canonical path.
+2. **Settings → MCP servers → Authenticate**, the host-side path Codex
+   documents. It is not always offered for a plugin-provided entry.
+3. **Reinstall the plugin** — a last resort. The marketplace policy is
+   `ON_INSTALL`, so installing re-runs the sign-in.
+
 **Verified in the Codex App build that was tested:** the plugin-provided
 `didim-mcp` entry has no Connect button, Disconnect button, gear, or toggle, and
-there is no verified way for a skill to clear the app's stored Didim sign-in. To
-force a fresh sign-in or switch Microsoft accounts, reinstalling the plugin
-re-triggers the install-time flow. A future Codex release may add controls.
+there is no verified way for a skill to clear the app's stored Didim sign-in. So
+a *forced* re-sign-in on the same account cannot be promised; switching accounts
+means working through the three steps above. A future Codex release may add
+controls.
 
 ### Closed the sign-in window? Do not reinstall first
 
@@ -139,7 +155,8 @@ digits) and `DEAL_YMD` (`YYYYMM`), and calls the trade or rent tool.
 종로구 작년 12월 매매와 전월세를 모두 비교해줘
 ```
 
-Enable the matching tools in the Didim user portal, then restart Codex:
+Enable the matching tools in the [Didim MCP portal](https://didimmcp-dev.didimservice.com/),
+then restart Codex:
 국토교통부 법정동코드 조회 (always) · 국토교통부 아파트 매매 실거래가 조회 (trade)
 · 국토교통부 아파트 전월세 실거래가 조회 (rent). Upstream provider credentials are
 injected server-side from your OAuth identity.
@@ -148,7 +165,11 @@ injected server-side from your OAuth identity.
 
 The plugin does not ship a tool catalog. On every connection the MCP server
 returns, via `tools/list`, only the tools the signed-in user has enabled in the
-Didim portal. The set differs per user and changes without a plugin update.
+[Didim MCP portal](https://didimmcp-dev.didimservice.com/). The set differs per
+user and changes without a plugin update.
+
+Zero tools is an auth/availability problem, not an entitlement one — see
+"No Didim tools at all" above.
 
 ## Provider credentials are not the removed API key
 

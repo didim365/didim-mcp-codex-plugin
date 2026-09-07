@@ -12,7 +12,8 @@ paths:
 
 0.1.x가 남긴 레거시 `[mcp_servers.didim-mcp]` / `[mcp_servers.didim-mcp.*]` 블록 제거.
 그 블록이 남아 있으면 `plugin.json`이 선언한 OAuth MCP 서버를 **가려서**(shadow) OAuth 로그인이
-동작하지 않는다(검증됨: 블록이 있으면 `codex mcp list`에 플러그인 서버가 아예 나오지 않는다).
+동작하지 않는다(standalone CLI 컨텍스트에서 검증됨: 블록이 있으면 그 CLI의 `codex mcp list`에
+플러그인 서버가 아예 나오지 않는다. App 상태의 근거로는 쓰지 않는다 — `CLAUDE.md` Architecture 참조).
 
 여기에 **MCP 서버 등록 기능을 다시 넣지 않는다.** 등록은 `plugin.json`의 `mcpServers`가 한다.
 **자격증명 입력 기능도 다시 넣지 않는다.** 인증은 Codex OAuth가 한다.
@@ -29,7 +30,9 @@ paths:
 ## 인코딩 (회귀 이력 있음 — commit a88f99e)
 
 - `.ps1`은 **UTF-8 BOM(`ef bb bf`)으로 저장**한다. BOM이 없으면 PS 5.1이 파일을 ANSI로 읽어
-  스크립트 안의 한글 문자열이 깨진다. 편집 후 `head -c3 <file> | od -An -tx1`로 확인한다.
+  비ASCII 문자가 깨진다(현재 파일에도 주석에 em dash가 있고, 과거 한글 출력이 이 때문에
+  깨졌다 — commit a88f99e). 지금 스크립트 **출력은 영문**이지만 BOM 규칙은 회귀 방지용으로
+  유지한다. 편집 후 `head -c3 <file> | od -An -tx1`로 확인한다.
 - `.cmd`에는 BOM을 넣지 않는다. 대신 첫 줄들에 `chcp 65001 >nul`을 유지한다.
 - `.ps1` 선두의 `[Console]::InputEncoding/OutputEncoding/$OutputEncoding` 설정 블록과 이를 감싼
   `try { } catch { }`를 제거하지 않는다. 인코딩 설정 실패가 스크립트를 중단시키면 안 된다.

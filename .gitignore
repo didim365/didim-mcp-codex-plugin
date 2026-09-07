@@ -11,6 +11,9 @@ config.toml.backup-*
 *apikey*
 didim-vault-key*
 secrets.*
+# Agent rule doc, not a secret store. The pattern above would otherwise hide it
+# even though CLAUDE.md references it.
+!.claude/rules/secrets.md
 
 # --- Codex / plugin local state ---
 .codex/

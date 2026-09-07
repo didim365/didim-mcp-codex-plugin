@@ -9,6 +9,8 @@ Codex에서 **Didim MCP 서버**를 Microsoft 계정으로 연결해 사용하�
 - **MCP 서버 URL:** `https://didimmcp-dev.didimservice.com/mcp` (Streamable HTTP)
 - **인증:** OAuth 2.1 (Microsoft Entra 로그인 → Didim OAuth 동의) — Codex가 수행
 - **사용자가 입력하는 자격증명:** 없음
+- **Didim MCP 포털:** <https://didimmcp-dev.didimservice.com/> — 사용할 Tool을 켜고 끄는 곳
+- **현재 대상:** dev 환경
 
 > 이 저장소에도, 배포되는 플러그인 파일에도 사용자 자격증명은 존재하지 않습니다.
 > 토큰은 Codex가 자체 자격증명 저장소에 보관합니다.
@@ -77,16 +79,25 @@ Skill은 **현재 채팅에 노출된 Didim MCP Tool**을 기준으로 상태를
 로그인될 수 있습니다. 그럴 때는 Microsoft 로그인 화면에서 **"다른 계정으로 로그인"** 을
 선택하세요.
 
+### 재로그인이 필요할 때 — 이 순서로 시도하세요
+
+1. **Didim Tool을 호출합니다.** 미인증 상태의 OAuth MCP Tool을 호출하면 호스트가 자기
+   인증 흐름을 띄웁니다(OAuth MCP 규격). 이것이 정본 경로입니다.
+2. **설정 → MCP 서버**의 **Authenticate** 동작을 사용합니다. Codex 문서가 안내하는
+   호스트 측 경로입니다. 다만 플러그인 제공 항목에 항상 노출되지는 않습니다.
+3. **최후수단으로 플러그인을 재설치**합니다. 마켓플레이스 정책이 `ON_INSTALL`이므로 설치
+   시점 로그인이 다시 실행됩니다. 1·2가 안 될 때만 쓰세요.
+
 ### 확인된 것과 확인되지 않은 것
 
 - **확인됨** — 설치 시점의 Microsoft 로그인 화면은 실제로 뜹니다(마켓플레이스 정책이
-  `ON_INSTALL`). Tool 호출은 호스트의 인증 흐름을 유발합니다. Codex 문서는 설정 →
-  MCP 서버 목록의 **Authenticate** 동작을 안내합니다.
+  `ON_INSTALL`). Tool 호출은 호스트의 인증 흐름을 유발합니다. 로그인 창을 닫아도 등록은
+  유지됩니다.
 - **확인되지 않음** — 검증에 사용한 Codex 앱 UI에서는 플러그인 제공 `didim-mcp` 항목에
-  Connect / Disconnect 버튼이나 톱니 아이콘이 **없었습니다.** 그리고 앱에 저장된 Didim
-  로그인을 Skill이 직접 지우는 방법은 확인되지 않았습니다. 같은 계정으로 강제 재로그인
-  하거나 계정을 완전히 바꾸는 확실한 경로는 현재 **플러그인 재설치**(설치 시점 로그인이
-  다시 실행됨)뿐입니다.
+  Connect / Disconnect 버튼이나 톱니 아이콘이 **없었습니다.** 앱에 저장된 Didim 로그인을
+  Skill이 직접 지우는 방법도 확인되지 않았습니다. 따라서 같은 계정으로 **강제** 재로그인은
+  보장할 수 없고, 계정 변경은 위 3단계를 순서대로 시도해야 합니다. 이후 Codex 릴리스에서
+  UI가 추가될 수 있습니다.
 
 > **`codex mcp list` 는 Codex 앱의 상태가 아닙니다.** Codex 앱은 셸 명령을 별도의
 > 샌드박스 OS 계정으로 실행하므로, 그 안에서 실행한 `codex` 는 앱과 **다른 Codex 홈**을
@@ -139,7 +150,12 @@ config.toml 읽기 → 예전 didim-mcp 블록 탐지 → 없으면 그대로 �
 ```
 
 - 예전 키 값은 **읽어서 비교하거나 출력하지 않습니다.** `legacy credential removed` 만 알립니다.
-- 정리 후: Codex 완전 종료 → 재실행 → `codex mcp login didim-mcp` → Microsoft 로그인.
+- 기본 실행은 **어떤 프로세스도 건드리지 않습니다.** Codex 프로세스를 스크립트가 닫게 하려면
+  `-KillCodexProcesses`를 붙이세요(확인 프롬프트 기본값은 No, `-KillWithoutConfirmation`으로
+  생략 가능). 레거시 블록이 없으면 아무것도 바꾸지 않고 끝나며, 여러 번 실행해도 안전합니다.
+- 정리 후: Codex 완전 종료 → 재실행 → Didim Tool 호출 → Microsoft 로그인.
+  (`codex mcp login didim-mcp`은 **별도로 설치한 `codex` CLI 전용**입니다. Codex 앱의 로그인
+  경로가 아닙니다.)
 - 이전에 생성된 `config.toml.backup-*` 파일에는 예전 키가 그대로 남아 있습니다. 필요 없으면
   삭제하세요.
 
@@ -183,7 +199,8 @@ RAG로 사내 문서에서 휴가 규정 검색해줘
        → 매매 Tool 또는 전월세 Tool 호출
 ```
 
-필요한 MCP Tool (조회하려는 거래 유형에 맞게 **Didim 사용자 포털에서 활성화** 후 Codex 재시작):
+필요한 MCP Tool (조회하려는 거래 유형에 맞게 **[Didim MCP 포털](https://didimmcp-dev.didimservice.com/)에서
+활성화** 후 Codex 재시작):
 - 국토교통부 법정동코드 조회 (`odcloud__get_legal_dong_codes`) — 항상 필요
 - 국토교통부 아파트 매매 실거래가 조회 (`molit-apt-trade__get_apt_trade_real_transactions`) — 매매
 - 국토교통부 아파트 전월세 실거래가 조회 (`molit-apt-rent__get_apt_rent_real_transactions`) — 전월세
@@ -241,6 +258,10 @@ Codex에 이 URL을 MCP 서버로 직접 등록해도 동일한 OAuth 로그인�
 │       └── molit-apartment-transactions/SKILL.md  # 국토교통부 아파트 실거래가 조회 (자동 선택)
 ├── CLAUDE.md                                 # 리포 작업용 에이전트 지시문 (배포 안 됨)
 ├── .claude/rules/                            # 경로 스코프 작업 규칙 (배포 안 됨)
+│   ├── powershell-scripts.md
+│   ├── release.md
+│   ├── secrets.md
+│   └── skills.md
 ├── .gitignore
 └── README.md
 ```
@@ -313,13 +334,13 @@ codex plugin remove didim-mcp@didim
 | 플러그인 화면에 Connect 버튼이 없음 | 검증한 Codex 앱 UI에서는 플러그인 제공 MCP에 Connect/Disconnect가 노출되지 않았습니다. Didim Tool을 호출하면 필요할 때 Codex가 로그인을 요구합니다 |
 | `codex mcp list` 에 `didim-mcp` 가 안 나옴 | 앱 안에서 실행한 `codex` 는 **별도 샌드박스 계정의 Codex 홈**을 읽습니다. 앱 상태의 근거가 아닙니다. `/mcp` 로 확인하세요 |
 | 업그레이드 후 인증이 계속 실패함 | 0.1.x가 남긴 `[mcp_servers.didim-mcp]`가 플러그인 설정을 가리고 있습니다. `migrate-didim-mcp.cmd` 실행 후 Codex 재시작 |
-| 예전 `X-Didim-Vault-Api-Key` / `http://49.50.138.22:31083/mcp/` 로 붙어 있음 | 같은 원인입니다. 위 정리 스크립트를 실행하세요 |
-| 다른 Microsoft 계정으로 바꾸고 싶음 | 현재 앱에서 확인된 확실한 경로는 **플러그인 재설치**(설치 시점 로그인이 다시 실행됨)입니다. Microsoft 화면이 뜨면 **"다른 계정으로 로그인"** 을 선택하세요 |
-| **Didim Tool이 하나도 안 보임** (`/mcp`에는 `사용함 / 인증됨(OAuth)`) | **포털 권한 문제가 아닙니다.** Codex가 저장해 둔 로그인을 갱신하려다 서버에서 거부되면 MCP 서버가 아예 기동하지 않고, 그래도 `/mcp` 배지는 `인증됨`으로 남습니다. Codex를 완전히 재시작한 뒤 Didim Tool을 호출해 로그인 창이 뜨는지 확인하세요. 그래도 안 되면 플러그인 재설치(설치 시점 로그인 재실행) |
+| 예전 `X-Didim-Vault-Api-Key` 헤더나 예전 평문 HTTP URL로 붙어 있음 | 같은 원인입니다. 위 정리 스크립트를 실행하세요 |
+| 다른 Microsoft 계정으로 바꾸고 싶음 | 위 **재로그인 순서**를 그대로 따르세요(Tool 호출 → 설정의 Authenticate → 최후수단 재설치). Microsoft 화면이 뜨면 **"다른 계정으로 로그인"** 을 선택하세요 — SSO 세션이 남아 있으면 같은 계정으로 자동 로그인됩니다 |
+| **Didim Tool이 하나도 안 보임** (`/mcp`에는 `사용함 / 인증됨(OAuth)`) | **포털 권한 문제가 아닙니다.** Codex가 저장해 둔 로그인을 갱신하려다 서버에서 거부되면 MCP 서버가 아예 기동하지 않고, 그래도 `/mcp` 배지는 `인증됨`으로 남습니다. Codex를 완전히 재시작한 뒤 Didim Tool을 호출해 로그인 창이 뜨는지 확인하세요. 그다음 설정 → MCP 서버의 **Authenticate**, 그래도 안 되면 최후수단으로 플러그인 재설치(설치 시점 로그인 재실행) |
 | 연결은 됐는데 **특정** Tool만 없음 (다른 Didim Tool은 정상) | 인증 문제가 아닙니다. **Didim 사용자 포털에서 해당 Tool을 활성화**한 뒤 Codex 재시작 |
 | 한동안 쓰다가 갑자기 인증 실패 | Codex가 먼저 refresh를 시도하고, 서버가 그 refresh를 거부하면 재로그인이 필요합니다. Didim Tool을 다시 호출해 로그인 요구가 뜨는지 확인하세요 |
 | 설치가 안 됨 | 플러그인 화면에 **Didim** 마켓플레이스가 추가됐는지 확인 (CLI 사용자는 `codex plugin marketplace list`) |
-| 스크립트 실행 시 한글이 `??`/깨져서 나옴 | Windows PowerShell 5.1의 UTF-8 처리 문제입니다. 최신 버전으로 업데이트하세요. 스크립트가 UTF-8 BOM + `chcp 65001` + 콘솔 인코딩을 적용합니다 |
+| 스크립트 출력에 경로의 한글이 `??`로 깨져 나옴 | Windows PowerShell 5.1의 UTF-8 처리 문제입니다. 스크립트가 UTF-8 BOM + `chcp 65001` + 콘솔 인코딩을 적용하지만, 콘솔 폰트·코드페이지에 따라 사용자 이름 등 비ASCII 경로가 깨질 수 있습니다. 표시만 깨지는 것이고 정리 결과는 정상입니다 |
 
 ---
 

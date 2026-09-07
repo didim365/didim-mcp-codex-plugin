@@ -36,8 +36,9 @@ paths:
 - 인증이 필요하면 **Tool 호출이 호스트의 인증 흐름을 띄운다**(OAuth MCP 규격: Tool 최초
   호출 시 인증). 이것이 자연어 재인증의 정본 경로다. 설치 시점 OAuth(`ON_INSTALL`)도 실재한다.
 - **검증되지 않은 mechanism을 약속하지 않는다.** 앱에 저장된 로그인을 Skill이 지우는 방법은
-  확인되지 않았다. 강제 재로그인·계정 변경의 확인된 경로는 플러그인 재설치뿐이며, 한계는
-  숨기지 않고 그대로 말한다.
+  확인되지 않았다. 재로그인·계정 변경 안내는 항상 이 순서로 제시한다: ① Tool 호출로 호스트
+  인증 흐름 유발 ② 설정 → MCP 서버의 **Authenticate** ③ 최후수단으로 플러그인 재설치
+  (`ON_INSTALL`). 같은 계정으로의 **강제** 재로그인은 보장할 수 없다는 한계를 숨기지 않는다.
 - `codex mcp login/logout/list`는 **별도 설치한 standalone CLI 전용**으로만 안내하고, 그렇게
   라벨링한다. App 플러그인 인증 lifecycle의 경로로 제시하지 않는다.
 - 인증 실패 안내의 종착점은 항상 `didim-mcp-connect` Skill이다. 로그인 계정 조회·계정 변경·
@@ -56,7 +57,9 @@ paths:
   `molit-apt-rent__get_apt_rent_real_transactions`,
   그리고 신원 조회용 `didim-mcp-auth__get_current_user_profile` ·
   `didim-vault__get_current_user_profile` 다섯이다. 신원 조회는 둘 중 **노출된 쪽**을 쓰고,
-  둘 다 없으면 포털 권한 문제로 안내하고 중단한다.
+  **둘 다 없으면 먼저 Didim Tool이 하나라도 노출됐는지 센다.** 다른 Didim Tool이 동작하면
+  포털 권한 문제이고, **하나도 없으면 서버 자체가 이 세션에 없는 것**이므로 포털 권한 문제로
+  안내하지 않는다(인증 lifecycle 문제로 다룬다).
 - Didim MCP는 사용자가 포털에서 활성화한 Tool만 노출한다. 사용 전에 `tools/list`로 존재를
   확인하고, 없으면 즉시 중단 + 포털 활성화 안내로 끝낸다. 우회 경로·대체 엔드포인트를
   만들어내지 않는다.

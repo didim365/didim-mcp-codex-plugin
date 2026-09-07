@@ -34,6 +34,17 @@
 - Skill 트리거·흐름 변경 → 두 README의 해당 절
 - 배포되는 파일 추가/이동 → 루트 README의 저장소 구조 도식
 - `plugin.json`의 `mcpServers` URL 변경 → 두 README의 URL 서술 + `CLAUDE.md` Architecture
+- `plugin.json`의 `interface`(`websiteURL`, `defaultPrompt`, `longDescription` 등) 변경 →
+  포털 URL·예시 발화를 서술한 두 README 절
+- `marketplace.json`의 `policy.authentication` 변경 → 두 README의 로그인 시점 서술 +
+  `didim-mcp-connect` SKILL.md
+
+문서의 역할 분리와 각 문서가 담는 것은 `CLAUDE.md`의 Source of Truth 절에 있다. 여기에
+다시 적지 않는다.
+
+`plugins/didim-mcp/README.md`는 **설치본과 함께 배포된다.** 설치 디렉터리에는 저장소 루트가
+없으므로 이 파일에서 `../../README.md` 같은 상대 링크를 쓰지 않는다 — 저장소 외부에서도
+열리는 절대 URL만 쓴다.
 
 스크립트는 `plugins/didim-mcp/` 안에 있어야 한다. Codex는 설치 시 플러그인 디렉터리만
 배포하므로, 저장소 루트로 옮기면 설치된 사용자가 스크립트를 찾지 못한다.
