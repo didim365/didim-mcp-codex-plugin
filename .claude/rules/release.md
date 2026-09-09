@@ -19,6 +19,8 @@
 - 사용자 조치가 필요한 동작 변경은 **minor**를 올린다. `0.2.0`이 그 사례다(API Key → OAuth
   전환. 기존 사용자는 레거시 `config.toml` 블록 정리를 1회 수행해야 한다). 1.0 이전이므로
   major는 올리지 않는다.
+- 문서만 바꾼 커밋은 **버전을 올리지 않는다.** 설치본과 함께 배포되는
+  `plugins/didim-mcp/README.md`를 고쳤어도 마찬가지다(선례: `7768f37`, `59ae804`).
 - `.agents/plugins/marketplace.json`에는 버전이 없다. 여기에 버전 필드를 새로 만들지 않는다.
 - 두 매니페스트의 `name`(`didim` / `didim-mcp`)은 사용자의 설치 식별자
   (`codex plugin add didim-mcp@didim`)와 마켓플레이스 URL에 직접 묶여 있다. 바꾸면 기존 설치가

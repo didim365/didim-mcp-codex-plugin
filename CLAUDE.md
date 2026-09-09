@@ -136,7 +136,14 @@ git diff --stat
 ```bash
 export CODEX_HOME=$(mktemp -d)
 codex plugin marketplace add "$PWD" && codex plugin add didim-mcp@didim
+codex plugin list   # didim-mcp@didim / installed, enabled / 버전
 codex mcp list      # didim-mcp / HTTPS URL / Auth "Not logged in" 이면 정상
+
+# 설치 캐시 트리 = 실제 배포 범위(plugin.json · README.md · scripts · skills 뿐).
+find "$CODEX_HOME/plugins/cache" -maxdepth 6
+
+# 문서에 적은 서브커맨드가 실재하는지
+codex mcp -h; codex plugin -h; codex plugin marketplace -h
 ```
 
 `.ps1` 변경 시에는 위에 더해 `.claude/rules/powershell-scripts.md`의 체크 항목을 눈으로 확인한다.

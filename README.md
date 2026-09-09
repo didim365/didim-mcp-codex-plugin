@@ -17,6 +17,27 @@ Codex에서 **Didim MCP 서버**를 Microsoft 계정으로 연결해 사용하�
 
 ---
 
+## 이 저장소의 책임 범위
+
+이 저장소는 **애플리케이션이 아니라 Codex 플러그인 배포물**입니다. 서버 코드, DB, API,
+빌드 산출물, 환경변수가 없습니다.
+
+| 이 저장소가 소유하는 것 | 소유하지 않는 것 (어디에 있는지) |
+| --- | --- |
+| 마켓플레이스 · 플러그인 매니페스트 (MCP 서버 URL 선언) | **OAuth 구현** — Codex 내장 MCP OAuth 클라이언트와 Didim Auth 서버 |
+| Skill 3개 (연결 · 안전 사용 · 실거래가 조회) | **Tool 카탈로그와 사용자별 권한** — Didim MCP 서버 / 포털 |
+| 0.1.x 레거시 `config.toml` 정리 스크립트 | **Provider credential 주입** — Didim Vault (서버 측) |
+| 사용자 안내 문서 | **Microsoft 계정 · MFA · 계정 선택** — Microsoft Entra |
+
+이 저장소에는 OAuth `client_id`·`client_secret`·redirect URI·토큰이 존재하지 않습니다.
+Tool 목록도 여기에 없습니다 — 접속할 때마다 서버가 `tools/list`로 내려줍니다.
+
+**설치 시 사용자 PC로 배포되는 범위**(실측): `plugins/didim-mcp/` 아래의
+`.codex-plugin/plugin.json` · `README.md` · `scripts/` · `skills/` 뿐입니다.
+`CLAUDE.md`와 `.claude/rules/`는 배포되지 않으며 플러그인 동작에 영향을 주지 않습니다.
+
+---
+
 ## 설치 · 연결 (Codex 앱)
 
 1. **Codex 앱**을 실행합니다.
@@ -168,12 +189,15 @@ MCP 서버가 `tools/list`로 **로그인한 사용자에게 허용된 것만** 
 포털 설정 변경 시점마다 보이는 Tool이 다를 수 있습니다.
 
 ```
-내 Didim 사용자 정보 보여줘
-사용 가능한 Didim 서버 목록 보여줘
-RAG로 사내 문서에서 휴가 규정 검색해줘
+지금 Didim MCP 누구로 로그인돼있어?
+내가 쓸 수 있는 Didim MCP 도구를 보여줘
 구로구 지난달 아파트 매매 실거래가 알려줘
 구로구 지난달 아파트 전월세 실거래가 알려줘
 ```
+
+> 위 예시 중 앞의 세 개는 플러그인이 Codex 화면에 노출하는 기본 예시 발화입니다
+> (`plugin.json`의 `interface.defaultPrompt`). 그 밖에 무엇을 물을 수 있는지는 포털에서
+> 어떤 Tool을 켰는지에 따라 달라집니다.
 
 ---
 
