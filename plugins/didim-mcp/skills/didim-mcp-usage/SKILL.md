@@ -7,7 +7,8 @@ description: >-
   logs, ports, or service health via Didim; perform a task with a Didim resource
   or MCP tool; or says things like "didim-mcp로 확인해줘" or names a specific
   Didim tool. Prioritizes read-only lookups and requires approval before changes
-  or high-risk actions. This skill does not handle authentication: connecting,
+  or high-risk actions. Vault resource lookup and credential handling belong to
+  the didim-vault skill. This skill does not handle authentication: connecting,
   reconnecting, sign-in failures, checking the currently signed-in account, and
   switching Microsoft accounts all belong to the didim-mcp-connect skill.
 ---
@@ -19,6 +20,10 @@ exposed tools, and the server is already connected.
 
 For MOLIT apartment trade or rent (전월세) real-transaction queries by district
 name and contract month, prefer the `molit-apartment-transactions` skill.
+
+For Didim Vault resources — finding or identifying a registered server, website,
+or API endpoint, and anything involving its stored credential — prefer the
+`didim-vault` skill.
 
 ## Authentication is not this skill's job
 

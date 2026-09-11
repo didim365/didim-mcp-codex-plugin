@@ -17,8 +17,10 @@ auth: OAuth 2.1 — discovered from the server, run by Codex
 It also ships:
 
 - **Skills** — `didim-mcp-connect` (connect, reconnect, upgrade, troubleshooting),
-  `didim-mcp-usage` (safe usage), and `molit-apartment-transactions` (MOLIT
-  apartment trade/rent real-transaction queries by district name + month).
+  `didim-mcp-usage` (safe usage), `didim-vault` (picking a Vault resource and
+  using its credential without ever printing it), and
+  `molit-apartment-transactions` (MOLIT apartment trade/rent real-transaction
+  queries by district name + month).
 - **Scripts** — `scripts/migrate-didim-mcp.ps1` / `.cmd`, for users upgrading
   from 0.1.x.
 

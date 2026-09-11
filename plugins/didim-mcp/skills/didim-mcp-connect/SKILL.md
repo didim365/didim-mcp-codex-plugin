@@ -137,10 +137,9 @@ Also: "현재 로그인 계정 알려줘", "내 MCP 계정 정보 보여줘", "w
 
 **Call the identity tool first. No CLI, no preflight.**
 
-Use whichever of these is present in this session, with `{}`:
-
-- `didim-mcp-auth__get_current_user_profile`
-- `didim-vault__get_current_user_profile`
+Call `didim-mcp-auth__get_current_user_profile` with `{}`. That is the only
+identity tool. There is no Vault-side equivalent — the Didim Vault API has no
+profile operation — so do not guess a second name to fall back to.
 
 Then:
 
@@ -149,10 +148,11 @@ Then:
   shows `auth_provider = MICROSOFT`, `auth_type = OAUTH`.
 - **Auth error** → "Didim MCP는 현재 세션에 연결되어 있지만 Microsoft 로그인이
   필요합니다." Then Case C.
-- **Neither tool exposed** → first check whether *any* Didim tool is exposed.
-  If some are, that one is a portal entitlement matter, not an auth failure.
-  If **none** are, this is not about entitlements at all — see "No Didim tools
-  at all". Either way, do not say the plugin is missing.
+- **Tool not exposed** → first check whether *any* Didim tool is exposed.
+  If some are, that one is a portal entitlement matter, not an auth failure —
+  the user enables it in the Didim portal and restarts Codex. If **none** are,
+  this is not about entitlements at all — see "No Didim tools at all". Either
+  way, do not say the plugin is missing.
 
 **Never** print an access token, refresh token, authorization code, session
 secret, or any Vault credential — not even truncated.

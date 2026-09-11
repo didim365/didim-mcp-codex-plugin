@@ -5,7 +5,8 @@ paths:
 
 # SKILL.md 작성 규칙
 
-대상: `didim-mcp-connect`, `didim-mcp-usage`, `molit-apartment-transactions`.
+대상: `didim-mcp-connect`, `didim-mcp-usage`, `didim-vault`,
+`molit-apartment-transactions`.
 이 파일들은 문서가 아니라 **런타임 동작**이다. Codex가 읽고 그대로 수행한다.
 
 ## Frontmatter
@@ -15,7 +16,7 @@ paths:
   표현은 절대 이 Skill을 부르지 못한다. 짧게 줄이는 것이 곧 기능 축소다.
 - 트리거는 **한국어와 영어를 함께** 적는다. 실제 사용자 발화 형태(예: `"Didim MCP 설정해줘"`,
   `"구로구 작년 7월 거래"`)와 오류 증상 문구(예: `"No Didim MCP tools are exposed"`)를 포함한다.
-- 새 Skill을 추가할 때는 기존 3개의 `description`과 트리거가 겹치지 않는지 확인한다. 겹치면
+- 새 Skill을 추가할 때는 기존 Skill들의 `description`과 트리거가 겹치지 않는지 확인한다. 겹치면
   어느 Skill이 뜰지 예측할 수 없다. 겹치는 영역이 있으면 본문에 위임 관계를 명시한다
   (`didim-mcp-usage` → `molit-apartment-transactions` 위임이 그 예다).
 
@@ -51,15 +52,24 @@ paths:
 
 ## MCP Tool 참조
 
-- Tool 이름은 **정확한 문자열 그대로** 적는다. 추측·축약·대체하지 않는다.
-  현재 참조되는 것은 `odcloud__get_legal_dong_codes`,
-  `molit-apt-trade__get_apt_trade_real_transactions`,
-  `molit-apt-rent__get_apt_rent_real_transactions`,
-  그리고 신원 조회용 `didim-mcp-auth__get_current_user_profile` ·
-  `didim-vault__get_current_user_profile` 다섯이다. 신원 조회는 둘 중 **노출된 쪽**을 쓰고,
-  **둘 다 없으면 먼저 Didim Tool이 하나라도 노출됐는지 센다.** 다른 Didim Tool이 동작하면
-  포털 권한 문제이고, **하나도 없으면 서버 자체가 이 세션에 없는 것**이므로 포털 권한 문제로
-  안내하지 않는다(인증 lifecycle 문제로 다룬다).
+- Tool 이름은 **정확한 문자열 그대로** 적는다. 추측·축약·대체하지 않는다. 이름은
+  `<provider_slug>__<operationId>` 로 조립되므로(서버 `app/domain/validators.py`의
+  `build_exposed_name`, 구분자 `__`), **참조를 추가하기 전에 해당 백엔드 OpenAPI에 그
+  `operationId`가 실재하는지 확인한다.** 백엔드에 없는 operation을 Tool 이름으로 적으면
+  Skill이 존재하지 않는 Tool을 부른다.
+- 현재 참조되는 것은 다음과 같다.
+
+  | Tool | 소유 백엔드 | 쓰는 Skill |
+  | --- | --- | --- |
+  | `didim-mcp-auth__get_current_user_profile` | didim-mcp-auth-backend | `didim-mcp-connect` |
+  | `didim-vault__list_my_resources` · `search_my_resources` · `list_available_resources` · `list_common_resources` · `search_common_resources` · `get_common_resource` · `list_accessible_servers` · `get_server_by_alias` · `execute_ssh_command` · `reveal_my_ssh_credential` · `reveal_common_credential` | didim-vault-backend | `didim-vault` |
+  | `odcloud__get_legal_dong_codes` · `molit-apt-trade__get_apt_trade_real_transactions` · `molit-apt-rent__get_apt_rent_real_transactions` | 공공데이터 Provider | `molit-apartment-transactions` |
+
+- 신원(현재 로그인 계정) 조회 Tool은 **`didim-mcp-auth__get_current_user_profile` 하나뿐이다.**
+  didim-vault API에는 프로필 operation이 없으므로 `didim-vault__` 쪽 대체 이름을 만들지 않는다.
+  이 Tool이 노출돼 있지 않으면 **먼저 Didim Tool이 하나라도 노출됐는지 센다.** 다른 Didim
+  Tool이 동작하면 포털 권한 문제이고, **하나도 없으면 서버 자체가 이 세션에 없는 것**이므로
+  포털 권한 문제로 안내하지 않는다(인증 lifecycle 문제로 다룬다).
 - Didim MCP는 사용자가 포털에서 활성화한 Tool만 노출한다. 사용 전에 `tools/list`로 존재를
   확인하고, 없으면 즉시 중단 + 포털 활성화 안내로 끝낸다. 우회 경로·대체 엔드포인트를
   만들어내지 않는다.

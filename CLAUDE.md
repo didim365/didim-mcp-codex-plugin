@@ -9,7 +9,7 @@ Codex(OpenAI) 플러그인 배포 저장소. 애플리케이션이 아니다. �
 배포물은 세 가지다.
 - 매니페스트 2개 — `.agents/plugins/marketplace.json`(마켓플레이스) → `plugins/didim-mcp/.codex-plugin/plugin.json`(플러그인)
 - Windows 스크립트 2개 — `plugins/didim-mcp/scripts/migrate-didim-mcp.{ps1,cmd}`
-- Skill 3개 — `plugins/didim-mcp/skills/*/SKILL.md`
+- Skill 4개 — `plugins/didim-mcp/skills/*/SKILL.md`
 
 플러그인은 **`plugin.json`의 `mcpServers`로 Hosted MCP 서버를 직접 선언한다.** 설치만으로
 서버가 등록되고, **로그인은 Codex 내장 MCP OAuth 클라이언트가 수행**한다. 이 저장소는

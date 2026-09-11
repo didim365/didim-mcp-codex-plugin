@@ -25,7 +25,7 @@ Codex에서 **Didim MCP 서버**를 Microsoft 계정으로 연결해 사용하�
 | 이 저장소가 소유하는 것 | 소유하지 않는 것 (어디에 있는지) |
 | --- | --- |
 | 마켓플레이스 · 플러그인 매니페스트 (MCP 서버 URL 선언) | **OAuth 구현** — Codex 내장 MCP OAuth 클라이언트와 Didim Auth 서버 |
-| Skill 3개 (연결 · 안전 사용 · 실거래가 조회) | **Tool 카탈로그와 사용자별 권한** — Didim MCP 서버 / 포털 |
+| Skill 4개 (연결 · 안전 사용 · Vault 리소스 · 실거래가 조회) | **Tool 카탈로그와 사용자별 권한** — Didim MCP 서버 / 포털 |
 | 0.1.x 레거시 `config.toml` 정리 스크립트 | **Provider credential 주입** — Didim Vault (서버 측) |
 | 사용자 안내 문서 | **Microsoft 계정 · MFA · 계정 선택** — Microsoft Entra |
 
@@ -54,7 +54,7 @@ Tool 목록도 여기에 없습니다 — 접속할 때마다 서버가 `tools/l
 8. 창이 닫혔거나 취소했다면 그냥 다음 항목으로 넘어가세요 — 등록은 유지되며, Didim Tool을
    호출할 때 Codex가 로그인을 다시 요구합니다.
 9. Codex를 새로 시작하고 **새 채팅**에서 `/mcp`로 `didim-mcp` 연결을 확인합니다.
-10. 이후 Didim 관련 질문에는 `didim-mcp-usage` / `molit-apartment-transactions`
+10. 이후 Didim 관련 질문에는 `didim-mcp-usage` / `didim-vault` / `molit-apartment-transactions`
     Skill이 자동 적용됩니다.
 
 연결이 안 보이거나 실패하면 새 채팅에서 `Didim MCP 연결해줘` 라고 요청하세요.
@@ -279,6 +279,7 @@ Codex에 이 URL을 MCP 서버로 직접 등록해도 동일한 OAuth 로그인�
 │   └── skills/
 │       ├── didim-mcp-connect/SKILL.md        # 연결 · 재연결 · 업그레이드 · 문제 해결 (자동 선택)
 │       ├── didim-mcp-usage/SKILL.md          # 안전 사용 (자동 선택)
+│       ├── didim-vault/SKILL.md              # Vault 리소스 선택 · Credential 안전 사용 (자동 선택)
 │       └── molit-apartment-transactions/SKILL.md  # 국토교통부 아파트 실거래가 조회 (자동 선택)
 ├── CLAUDE.md                                 # 리포 작업용 에이전트 지시문 (배포 안 됨)
 ├── .claude/rules/                            # 경로 스코프 작업 규칙 (배포 안 됨)
@@ -373,4 +374,5 @@ codex plugin remove didim-mcp@didim
 - 플러그인 문서: [`plugins/didim-mcp/README.md`](plugins/didim-mcp/README.md)
 - 연결 Skill: [`plugins/didim-mcp/skills/didim-mcp-connect/SKILL.md`](plugins/didim-mcp/skills/didim-mcp-connect/SKILL.md)
 - 안전 사용 Skill: [`plugins/didim-mcp/skills/didim-mcp-usage/SKILL.md`](plugins/didim-mcp/skills/didim-mcp-usage/SKILL.md)
+- Vault 리소스 Skill: [`plugins/didim-mcp/skills/didim-vault/SKILL.md`](plugins/didim-mcp/skills/didim-vault/SKILL.md)
 - 아파트 실거래가 Skill: [`plugins/didim-mcp/skills/molit-apartment-transactions/SKILL.md`](plugins/didim-mcp/skills/molit-apartment-transactions/SKILL.md)
