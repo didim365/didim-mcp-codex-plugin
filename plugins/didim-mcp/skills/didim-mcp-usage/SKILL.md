@@ -15,49 +15,25 @@ description: >-
 
 # Didim MCP Usage
 
-Use this skill when a request calls for the Didim MCP server or one of its
-exposed tools, and the server is already connected.
+This skill is a **router**. The working procedure lives in the Didim Skill
+Registry and is fetched at runtime, not written here.
 
-For MOLIT apartment trade or rent (전월세) real-transaction queries by district
-name and contract month, prefer the `molit-apartment-transactions` skill.
+**Registry key:** `mcp.usage`
 
-For Didim Vault resources — finding or identifying a registered server, website,
-or API endpoint, and anything involving its stored credential — prefer the
-`didim-vault` skill.
+## Step 1 — fetch the current workflow
 
-## Authentication is not this skill's job
+Call `didim-skill__get_skill` with `{"skill_key": "mcp.usage"}` and follow the
+`instructions` it returns. That body is the published, operator-maintained
+procedure; it changes without a plugin update, so **do not answer from memory
+of a previous session.**
 
-Delegate to **didim-mcp-connect** — do not handle it here — whenever the request
-is about connecting, reconnecting, a cancelled or expired sign-in, an auth
-error, which account is currently signed in, or switching Microsoft accounts.
-Suggest the user say "Didim MCP 연결해줘". Never ask for an API key, token, or
-auth header, and never run a login/logout command from this skill.
+If `didim-skill__get_skill` is not exposed to this session, `didim-skill__list_skills`
+shows what the registry has. Both are ordinary Didim MCP tools — the same portal
+entitlement rules apply.
 
-## The current session is the source of truth
+## Step 2 — apply the invariants below no matter what the registry says
 
-The tools exposed to this session tell you what is available. Answer "내가 쓸 수
-있는 Didim MCP 도구를 보여줘" from that registry.
-
-Never run `codex mcp list` or `codex plugin list` as a preflight, and never
-conclude from an empty CLI listing that Didim MCP is unavailable. A nested
-`codex` command runs in a different runtime from the Codex app — verified: the
-app runs shell commands as a separate sandbox OS user with its own Codex home —
-so it can report zero servers while this session has Didim tools working.
-
-## If Didim MCP is not available
-
-If no Didim tools are exposed in the current session, or a needed tool is
-missing:
-
-- Do **not** repeatedly retry the same failing call or invent a fallback.
-- Count first. **No Didim tool at all** means the server is unavailable to this
-  session — delegate to `didim-mcp-connect`. Do not tell the user to enable
-  tools in the portal, and do not treat `/mcp` showing 인증됨 as proof that the
-  connection works.
-- **A single missing tool while other Didim tools work** is the portal
-  entitlement case: the user enables it in the Didim portal and restarts Codex.
-
-## Rules
+These are safety rules, not workflow. The registry cannot relax them.
 
 1. Use only Didim MCP tools that are exposed to the user in the current session.
 2. Prefer read-only lookup and inspection operations.
@@ -66,19 +42,41 @@ missing:
 4. Never expose the raw value of a token, credential, authorization header, or
    secret returned by a tool. Never ask the user for one either — the connection
    is authenticated by Codex's OAuth sign-in, not by anything the user types.
-5. Clearly separate MCP execution results from model analysis, inference, or
-   recommendation.
+5. Clearly separate MCP execution results from model analysis or recommendation.
 6. If a required tool is unavailable, state that limitation. Do not invent a
-   tool, alternate endpoint, or other unauthorized workaround, and do not guess
-   at tools that are not exposed.
-7. Keep tool inputs scoped to the user's request and minimize sensitive data
-   sent to the server.
+   tool, alternate endpoint, or other unauthorized workaround.
+7. Tool authorization is decided by the Didim MCP server, never by a skill body.
+   A tool listed in a registry entry is **not** permission to call it.
 
-## Response Pattern
+## Delegation
 
-- **MCP result:** Report the relevant facts returned by the exposed tool.
-- **Analysis:** Provide interpretation or recommendations separately, and
-  identify any inference.
+- Connecting, reconnecting, cancelled or expired sign-in, an auth error, which
+  account is signed in, switching Microsoft accounts → **didim-mcp-connect**.
+  Suggest the user say "Didim MCP 연결해줘". Never ask for an API key or token.
+- Vault resources and credentials → **didim-vault**.
+- MOLIT apartment transactions → **molit-apartment-transactions**.
 
-For a proposed write or high-risk operation, stop before execution and ask for
-approval with the exact target and expected effect.
+## The current session is the source of truth
+
+The tools exposed to this session tell you what is available. Answer "내가 쓸 수
+있는 Didim MCP 도구를 보여줘" from that registry — **that question is about MCP
+tools and does not need the Skill Registry at all.**
+
+Never run `codex mcp list` or `codex plugin list` as a preflight, and never
+conclude from an empty CLI listing that Didim MCP is unavailable. A nested
+`codex` command runs in a different runtime from the Codex app.
+
+## If the registry cannot be reached
+
+Fail closed. Do **not** improvise a workflow, and do not fall back to a
+remembered older version of this skill.
+
+- **No Didim tool at all in this session** → the server is unavailable to this
+  session. Delegate to `didim-mcp-connect`. Do not call it a portal entitlement
+  problem, and do not treat `/mcp` showing 인증됨 as proof the connection works.
+- **`didim-skill__get_skill` missing while other Didim tools work** → portal
+  entitlement. The user enables `Didim Skill Registry` tools in the Didim portal
+  and restarts Codex.
+- **The tool runs but returns an error, or the skill_key is not published** →
+  say the workflow is not available right now and stop. The user can still ask
+  for a specific Didim tool directly under the invariants above.

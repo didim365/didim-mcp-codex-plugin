@@ -1,0 +1,42 @@
+{
+  "name": "didim-mcp-codex-plugin-web",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "Didim Skill Registry Admin — React / TypeScript SPA. API·인증·인가는 FastAPI backend(app/)가 소유한다.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.460.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "tailwindcss": "^4.1.11"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.36.0",
+    "@tailwindcss/vite": "^4.1.11",
+    "@testing-library/dom": "10.4.1",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.0",
+    "@testing-library/user-event": "14.5.2",
+    "@types/react": "19.1.13",
+    "@types/react-dom": "19.1.9",
+    "@vitejs/plugin-react": "5.0.4",
+    "eslint": "9.36.0",
+    "eslint-plugin-react-hooks": "5.2.0",
+    "globals": "15.14.0",
+    "jsdom": "27.0.0",
+    "typescript": "5.9.2",
+    "typescript-eslint": "8.46.2",
+    "vite": "^6.4.3",
+    "vitest": "3.2.7"
+  }
+}

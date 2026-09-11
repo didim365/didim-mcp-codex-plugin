@@ -21,6 +21,23 @@ secrets.*
 plugins/cache/
 plugins/**/state/
 
+# --- Python (Skill Registry backend) ---
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# --- Node / React Admin (web/) ---
+web/node_modules/
+web/dist/
+web/.vite/
+*.tsbuildinfo
+
 # --- Logs & temp artifacts ---
 *.log
 logs/
@@ -38,3 +55,6 @@ desktop.ini
 .idea/
 .vscode/
 *.swp
+
+# 사내망 TLS 검사 CA — public 저장소에 커밋하지 않는다. certs/README.md 참고.
+certs/*.crt

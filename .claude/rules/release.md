@@ -1,7 +1,15 @@
 # 배포 · Git 규칙
 
-패키징 파이프라인도 CI도 없다. **`main` push가 곧 배포다.** 사용자는 Codex 앱에서
-마켓플레이스를 갱신해 받는다. 되돌릴 방법은 새 커밋뿐이다.
+이 저장소는 **두 개의 배포 경로**를 갖는다. 섞지 않는다.
+
+| 대상 | 경로 | 되돌리는 법 |
+| --- | --- | --- |
+| Codex Plugin (`plugins/didim-mcp/`) | `main` push → 사용자가 마켓플레이스 갱신 + 재설치 | 새 커밋 |
+| Skill Registry (`app/`·`web/`) | Jenkins → Harbor → deploy 저장소 newTag → ArgoCD | 이전 sha 태그로 되돌림 |
+| **Skill workflow 내용** | **Admin Web 초안 → 배포** | **Admin Web 롤백** (Git 과 무관) |
+
+세 번째 줄이 이번 전환의 요점이다. 업무 절차를 고치는 데 커밋도 릴리스도 필요 없다 —
+**커밋이 필요하다고 안내하면 틀린 것이다.**
 
 ## Git
 
@@ -11,6 +19,10 @@
   `feat: `, `feat(setup): `, `feat(skill): `, `feat(plugin): `, `fix(scripts): `, `docs: `.
 
 ## 버전
+
+플러그인 버전(`plugin.json`)은 **설치본에 배포되는 것**의 버전이다. `app/`·`web/` 변경은
+image 태그(`sha-<7hex>`)로 추적하며 플러그인 버전을 올리지 않는다 — 사용자 쪽 설치본이
+바뀌지 않기 때문이다. 단, thin router SKILL.md 를 고쳤으면 설치본이 바뀌므로 올린다.
 
 - 사용자에게 보이는 변경(스크립트 동작, Skill 내용, 매니페스트)을 커밋할 때는
   `plugins/didim-mcp/.codex-plugin/plugin.json`의 `version`을 함께 올린다. 일반 변경은
@@ -36,6 +48,10 @@
 - Skill 트리거·흐름 변경 → 두 README의 해당 절
 - 배포되는 파일 추가/이동 → 루트 README의 저장소 구조 도식
 - `plugin.json`의 `mcpServers` URL 변경 → 두 README의 URL 서술 + `CLAUDE.md` Architecture
+- runtime API 경로·`operation_id` 변경 → thin router SKILL.md 3개 + 두 README +
+  deploy 저장소 README 의 Provider 등록 표
+- `app/core/config.py` 설정 추가/삭제 → 루트 README 환경변수 표 + deploy 저장소 ConfigMap
+- DB schema 변경 → alembic migration + 루트 README DB 절 + `.claude/rules/registry.md`
 - `plugin.json`의 `interface`(`websiteURL`, `defaultPrompt`, `longDescription` 등) 변경 →
   포털 URL·예시 발화를 서술한 두 README 절
 - `marketplace.json`의 `policy.authentication` 변경 → 두 README의 로그인 시점 서술 +

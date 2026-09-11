@@ -1,0 +1,54 @@
+[
+  {
+    "skill_key": "mcp.usage",
+    "category": "MCP 공통",
+    "name": "Didim MCP 도구 사용",
+    "description": "연결이 끝난 Didim MCP 서버의 도구를 안전하게 사용하는 절차. 노출된 도구 목록 안내, 읽기 전용 우선, 변경·고위험 작업 승인 게이트, 결과와 분석의 분리를 규정한다. 인증(연결·재로그인·계정 확인)은 didim-mcp-connect 소관이며 Vault 리소스와 자격증명은 vault.resource 소관이다.",
+    "aliases": [
+      "didim-mcp-usage",
+      "mcp-usage"
+    ],
+    "tools": [],
+    "body": "mcp.usage.body.md"
+  },
+  {
+    "skill_key": "vault.resource",
+    "category": "Vault",
+    "name": "Didim Vault 리소스",
+    "description": "Didim Vault 에 등록된 접근 대상(SERVER / WEBSITE / API)을 찾고, 후보가 여럿일 때 사용자에게 고르게 하고, 자격증명을 출력하지 않은 채 실행으로 연결하는 절차. reveal 은 실행이 바로 소비할 때만 쓴다.",
+    "aliases": [
+      "didim-vault",
+      "vault"
+    ],
+    "tools": [
+      "didim-vault__list_my_resources",
+      "didim-vault__search_my_resources",
+      "didim-vault__list_available_resources",
+      "didim-vault__list_common_resources",
+      "didim-vault__search_common_resources",
+      "didim-vault__get_common_resource",
+      "didim-vault__list_accessible_servers",
+      "didim-vault__get_server_by_alias",
+      "didim-vault__execute_ssh_command",
+      "didim-vault__reveal_my_ssh_credential",
+      "didim-vault__reveal_common_credential"
+    ],
+    "body": "vault.resource.body.md"
+  },
+  {
+    "skill_key": "molit.apartment-transactions",
+    "category": "공공데이터",
+    "name": "국토교통부 아파트 실거래가",
+    "description": "시군구 이름과 자연어 계약월로 국토교통부 아파트 매매·전월세 실거래가를 조회하는 절차. 법정동코드를 도구로 해석해 LAWD_CD 를 만들고 DEAL_YMD 를 계산한 뒤 매매/전월세 도구를 호출한다. 코드를 기억에서 만들지 않는다.",
+    "aliases": [
+      "molit-apartment-transactions",
+      "molit-apt"
+    ],
+    "tools": [
+      "odcloud__get_legal_dong_codes",
+      "molit-apt-trade__get_apt_trade_real_transactions",
+      "molit-apt-rent__get_apt_rent_real_transactions"
+    ],
+    "body": "molit.apartment-transactions.body.md"
+  }
+]

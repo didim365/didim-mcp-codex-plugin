@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+/* 화면 전체의 기본 바탕. DIDIM 관리 화면들과 같은 중립 톤. */
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+  font-family:
+    "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR",
+    system-ui, sans-serif;
+}
+
+/* Markdown 미리보기 — 무거운 렌더러를 들이지 않고 최소 서식만 준다. */
+.md-preview {
+  @apply text-sm leading-relaxed whitespace-pre-wrap break-words;
+}

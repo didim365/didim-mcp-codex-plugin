@@ -16,13 +16,53 @@ auth: OAuth 2.1 — discovered from the server, run by Codex
 
 It also ships:
 
-- **Skills** — `didim-mcp-connect` (connect, reconnect, upgrade, troubleshooting),
-  `didim-mcp-usage` (safe usage), `didim-vault` (picking a Vault resource and
-  using its credential without ever printing it), and
-  `molit-apartment-transactions` (MOLIT apartment trade/rent real-transaction
-  queries by district name + month).
+- **Skills** — four of them, in two kinds:
+  - `didim-mcp-connect` — connect, reconnect, upgrade, troubleshooting.
+    **Static**: it handles the state where the connection is broken, so it
+    cannot depend on fetching anything over that connection.
+  - `didim-mcp-usage`, `didim-vault`, `molit-apartment-transactions` —
+    **thin routers**. Each one names a registry key, fetches the current
+    working procedure at run time, and keeps only the safety invariants
+    locally. The procedures themselves live in the Didim Skill Registry and are
+    published by an operator, so they change **without a plugin update**.
 - **Scripts** — `scripts/migrate-didim-mcp.ps1` / `.cmd`, for users upgrading
   from 0.1.x.
+
+## Where the working procedures live
+
+```
+Codex picks a skill from SKILL.md frontmatter   ← still static (triggers)
+  → thin router: didim-skill__get_skill(skill_key)
+      → Didim MCP gateway → Didim Skill Registry
+          → the PUBLISHED, enabled version of that procedure
+  → Codex follows it, calling other Didim tools
+      → those calls are authorized by the MCP server, never by a skill body
+```
+
+| Router skill | Registry key |
+| --- | --- |
+| `didim-mcp-usage` | `mcp.usage` |
+| `didim-vault` | `vault.resource` |
+| `molit-apartment-transactions` | `molit.apartment-transactions` |
+| `didim-dynamic-skill` | *(chosen at run time from `didim-skill__list_skills`)* |
+
+`didim-dynamic-skill` is the **fallback**. The three routers above cover the
+procedures that existed when the plugin shipped; anything an operator publishes
+later has no dedicated router, so this one lists what is currently published,
+picks a `skill_key` from the names and descriptions, and fetches it. That is how
+a brand-new procedure becomes usable **without reinstalling the plugin**. It
+only engages when the user named Didim and no dedicated skill fits, and it stops
+rather than improvising when nothing matches.
+
+The registry tools (`didim-skill__get_skill`, `didim-skill__list_skills`) are
+ordinary Didim MCP tools — **enable them in the Didim portal** like any other.
+If they are missing while other Didim tools work, that is a portal entitlement
+matter, not an authentication problem.
+
+**If the registry cannot be reached, the routers stop.** They do not invent a
+procedure and do not fall back to a remembered older version. That is
+deliberate: a half-remembered workflow that touches Vault credentials or public
+data APIs is worse than a clear "not available right now".
 
 Full installation, connection, update, and removal instructions (in Korean) live
 in the repository README:

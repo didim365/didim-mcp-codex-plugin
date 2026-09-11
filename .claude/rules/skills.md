@@ -6,8 +6,56 @@ paths:
 # SKILL.md 작성 규칙
 
 대상: `didim-mcp-connect`, `didim-mcp-usage`, `didim-vault`,
-`molit-apartment-transactions`.
+`molit-apartment-transactions`, `didim-dynamic-skill`.
 이 파일들은 문서가 아니라 **런타임 동작**이다. Codex가 읽고 그대로 수행한다.
+
+## Skill 선택과 Skill 본문은 다른 축이다
+
+```
+Skill 선택   ← frontmatter description   (정적. 여기 없으면 그 Skill은 절대 안 뜬다)
+Skill 본문   ← DB mcp_skill_registry     (동적. Admin Web 배포)
+```
+
+Codex의 Skill selector는 DB를 읽지 않는다. **트리거를 줄이는 것은 지금도 기능 축소다.**
+
+## 정적 / router 구분
+
+| Skill | 종류 | 규칙 |
+| --- | --- | --- |
+| `didim-mcp-connect` | **정적 유지** | 연결이 끊긴 상태를 다룬다 → Registry에 의존할 수 없다. 본문을 DB로 옮기지 않는다 |
+| `didim-mcp-usage` | thin router → `mcp.usage` | 업무 절차 본문을 여기 다시 넣지 않는다 |
+| `didim-vault` | thin router → `vault.resource` | 〃 |
+| `molit-apartment-transactions` | thin router → `molit.apartment-transactions` | 〃 |
+| `didim-dynamic-skill` | **generic fallback router** | `skill_key` 를 고정하지 않는다. `list_skills` 로 받아 고른다 |
+
+`didim-dynamic-skill` 이 있는 이유: Codex selector 가 DB 를 읽지 않으므로, **전용 router
+가 없는 새 Skill 은 그대로는 영영 발견되지 않는다.** 이 하나가 그 구멍을 메운다 —
+`list_skills` 로 배포본 목록을 받아 Codex 가 고르게 한다. **backend 에 semantic search /
+embedding / vector DB 를 추가하지 않는다.** 선택은 목록의 `name`/`description`/`aliases`
+만으로 한다.
+
+이 skill 의 `description` 을 넓히지 않는다. Didim 을 명시하지 않은 일반 질문까지 잡으면
+모든 대화가 Registry 왕복을 하게 된다. 새 Skill 을 DB 에 추가할 때 **여기를 고칠 필요는
+없다** — 그게 이 구조의 요점이다.
+
+## thin router 계약
+
+router 본문에 남기는 것은 **넷뿐**이다. 그 밖의 업무 절차를 여기 쓰면 DB와 두 개의 live
+정본이 생긴다.
+
+1. **언제 Registry를 조회할지** — 항상, 답하기 전에.
+2. **`skill_key`** — `didim-skill__get_skill` 에 그대로 넘길 문자열.
+3. **안전 invariant** — Registry가 완화할 수 없는 규칙(secret 미출력, 승인 게이트, 코드
+   기억 생성 금지, Tool 인가는 서버 소관).
+4. **Registry 사용 불가 시 동작** — fail-closed. **절차를 지어내지 않고, 기억하는 예전
+   버전으로 되돌아가지 않는다.** 원인 3분기(Didim Tool 0개 → 연결 / 특정 Tool 없음 →
+   포털 권한 / Registry 오류·미배포 → 중단)를 그대로 유지한다.
+
+`didim-skill__get_skill` · `didim-skill__list_skills` 이름은 MCP gateway의 provider
+slug(`didim-skill`)와 Registry runtime endpoint의 `operation_id` 양쪽에 묶여 있다.
+**한쪽만 바꾸면 Skill이 존재하지 않는 Tool을 부른다.** 이 대응은
+`tests/test_runtime_contract.py::test_skill_md_tool_names_match_runtime_operation_ids`
+가 소스 양쪽을 직접 읽어 고정한다 — `operation_id=` 를 지우거나 바꾸면 테스트가 깨진다.
 
 ## Frontmatter
 
@@ -64,6 +112,7 @@ paths:
   | `didim-mcp-auth__get_current_user_profile` | didim-mcp-auth-backend | `didim-mcp-connect` |
   | `didim-vault__list_my_resources` · `search_my_resources` · `list_available_resources` · `list_common_resources` · `search_common_resources` · `get_common_resource` · `list_accessible_servers` · `get_server_by_alias` · `execute_ssh_command` · `reveal_my_ssh_credential` · `reveal_common_credential` | didim-vault-backend | `didim-vault` |
   | `odcloud__get_legal_dong_codes` · `molit-apt-trade__get_apt_trade_real_transactions` · `molit-apt-rent__get_apt_rent_real_transactions` | 공공데이터 Provider | `molit-apartment-transactions` |
+  | `didim-skill__get_skill` · `didim-skill__list_skills` | didim-mcp-codex-plugin (이 저장소 `app/`) | thin router 3개 + `didim-dynamic-skill` |
 
 - 신원(현재 로그인 계정) 조회 Tool은 **`didim-mcp-auth__get_current_user_profile` 하나뿐이다.**
   didim-vault API에는 프로필 operation이 없으므로 `didim-vault__` 쪽 대체 이름을 만들지 않는다.
