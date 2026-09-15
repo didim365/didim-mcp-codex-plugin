@@ -58,6 +58,18 @@ app/api/mappers.py   Entity → DTO. 화면마다 다시 조립하지 않는다
 - data migration 은 **멱등**이어야 한다. 이미 있는 것을 덮어쓰지 않는다 — 운영 중 사람이
   고친 내용을 migration 이 되돌리면 안 된다.
 - `downgrade` 에서 사람이 손댄 데이터를 지우지 않는다(`0002` 의 버전 수 확인 참고).
+- **built-in Skill 추가는 `app/seed/manifest.json` 수정만으로 끝나지 않는다.** 이미 적용된
+  migration 은 다시 실행되지 않으므로 배포된 DB 에는 아무 일도 일어나지 않는다. 새
+  migration 을 하나 두고 `install_seed_skills(op.get_bind(), SCHEMA, ("<key>",))` 를
+  부른다 — 본문·alias·tool 문자열을 migration 에 복제하지 않는다(정본은 `app/seed`).
+- **이미 적용된 migration 파일은 고치지 않는다.** `0002` 는 원본 그대로 둔다 — 운영 DB 의
+  `alembic_version` 이 이미 지나온 지점이라 고쳐도 실행되지 않고, 소스와 실제 DB 이력만
+  어긋난다. 새 migration 은 **자기가 선언한 `skill_key` 만** 다룬다(`0003` 의
+  `SEEDED_KEYS`). 신규 DB 에서는 `0002` 가 manifest 전체를 넣고 `0003` 이 멱등하게
+  건너뛰므로, 두 경로의 최종 상태가 같다.
+- seed 는 raw SQL 이라 Pydantic·validator 를 거치지 않는다. manifest 값은 Admin API 가
+  받을 수 있는 것이어야 한다(`alias` 는 소문자 ASCII — 한글 alias 는 저장할 수 없다).
+  `tests/unit/test_seed_manifest.py` 가 대조한다.
 
 ## 화면 (`web/`)
 

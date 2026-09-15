@@ -50,5 +50,20 @@
       "molit-apt-rent__get_apt_rent_real_transactions"
     ],
     "body": "molit.apartment-transactions.body.md"
+  },
+  {
+    "skill_key": "gw.holiday",
+    "category": "GW",
+    "name": "내 연차 현황 조회",
+    "description": "로그인한 사용자 본인의 그룹웨어(GW) 연차 현황을 연도별로 조회하는 절차. \"연차\", \"휴가\", \"남은 연차\", \"잔여 연차\", \"연차 현황\", \"작년 연차\", \"올해 연차\", \"2025년 연차\" 같은 요청을 처리한다. 자연어 연도를 실제 현재 날짜 기준으로 해석해 didim-gw__get_my_holiday_info 를 한 번 호출한다. 다른 사람의 연차는 조회하지 않는다.",
+    "aliases": [
+      "gw-holiday",
+      "holiday",
+      "annual-leave"
+    ],
+    "tools": [
+      "didim-gw__get_my_holiday_info"
+    ],
+    "body": "gw.holiday.body.md"
   }
 ]

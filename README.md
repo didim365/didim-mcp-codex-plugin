@@ -299,7 +299,7 @@ Codex에 이 URL을 MCP 서버로 직접 등록해도 동일한 OAuth 로그인�
 │   ├── domain/       enums · validators
 │   ├── repositories/ skill · audit
 │   ├── services/     skill_service(초안/배포/롤백) · audit_service
-│   ├── seed/         정적 SKILL.md → DB 초기 이관 스냅샷(1회용)
+│   ├── seed/         built-in Skill 본문 + manifest (migration 이 DB 로 넣는 스냅샷)
 │   ├── web/          session(HttpOnly 쿠키·CSRF) · sso · routes(/login,/logout) · spa
 │   └── main.py
 ├── web/                                      # ← React Admin (Vite + React 19 + TS + Tailwind v4)
@@ -497,6 +497,10 @@ generic router는 **Didim을 명시했는데 전용 router가 없을 때만** �
 | `molit-apartment-transactions` | B. 업무 workflow | DB `molit.apartment-transactions` + thin router 86줄 |
 | `didim-dynamic-skill` | **신규 · generic fallback router** | 본문 없음. 목록 조회 → 선택 → 조회 |
 
+전용 router가 없는 built-in Skill도 있습니다. `gw.holiday`(내 연차 현황 조회)가 그 첫
+사례로, DB에만 있고 `didim-dynamic-skill`이 목록에서 찾아 씁니다 — **플러그인 릴리스 없이
+발견됩니다.**
+
 `didim-mcp-connect`를 DB로 옮기지 않은 이유는 단순합니다 — **연결이 끊긴 상태를 다루는
 Skill인데, 연결이 끊기면 Registry Tool도 부를 수 없습니다.** 자기 자신을 못 가져오는
 절차가 됩니다.
@@ -576,7 +580,7 @@ alias/tool을 skill-level이 아니라 **version-level**에 둔 이유: 롤백�
 - **`uq_skill_versions_one_published`** — `WHERE status = 'PUBLISHED'` 부분 unique index.
   한 Skill에 배포본은 하나뿐이라는 사실을 애플리케이션이 아니라 **DB가** 강제합니다.
 
-Migration head: **`0002_seed_initial_skills`**
+Migration head: **`0003_add_gw_holiday_skill`**
 
 ### Skill lifecycle (Draft / Publish / Rollback)
 
@@ -717,10 +721,38 @@ uv run alembic upgrade head      # 로컬
 # 운영: deploy 저장소의 apps/didim-mcp-codex-plugin/migration-job.yaml 을 1회 apply
 ```
 
-`0002_seed_initial_skills`가 기존 정적 SKILL.md 본문을 초기 배포본 v1로 넣습니다.
-**멱등**이라 이미 있는 `skill_key`는 건너뜁니다 — 운영 중 Admin Web에서 고친 내용을
+`0002_seed_initial_skills`가 기존 정적 SKILL.md 본문을 초기 배포본 v1로 넣고,
+`0003_add_gw_holiday_skill`이 built-in Skill `gw.holiday`(내 연차 현황 조회)를 추가합니다.
+둘 다 **멱등**이라 이미 있는 `skill_key`는 건너뜁니다 — 운영 중 Admin Web에서 고친 내용을
 되돌리지 않습니다. seed 이후 runtime은 DB만 읽고, 운영 수정은 소스가 아니라 Admin Web에서
 합니다.
+
+#### built-in Skill을 새로 추가할 때
+
+**`app/seed/manifest.json`만 고치면 이미 배포된 DB에는 아무 일도 일어나지 않습니다.**
+적용이 끝난 migration은 다시 실행되지 않기 때문입니다. 그래서 built-in Skill 추가는 항상
+두 부분입니다.
+
+1. `app/seed/manifest.json` + `app/seed/skills/<key>.body.md` — 내용의 정본.
+2. 새 migration 한 건 — `install_seed_skills(op.get_bind(), SCHEMA, ("<key>",))` 만 부릅니다.
+   본문 문자열을 migration에 복제하지 않습니다.
+
+**이미 적용된 migration 파일은 고치지 않습니다.** 운영 DB가 이미 지나온 지점이라 고쳐도
+실행되지 않고, 소스와 실제 DB 이력만 어긋납니다. 새 migration은 자기가 선언한
+`skill_key`만 봅니다.
+
+그래서 두 경로의 최종 상태가 같습니다.
+
+| 경로 | 0002 | 0003 | 결과 |
+| --- | --- | --- | --- |
+| 신규 DB | manifest 4건 seed | 이미 있어 skip | 4건 |
+| 기존 운영 DB (0002 적용 완료) | 실행되지 않음 | `gw.holiday`만 삽입 | 기존 3건 불변 + 1건 |
+
+이미 있으면 통째로 건너뛰므로 운영자가 Admin Web에서 고친 내용을 덮어쓰지 않고,
+`downgrade`는 사람이 새 버전을 올린 Skill을 남겨 둡니다(`0002`·`0003` 공통).
+
+현재 built-in Skill 4건: `mcp.usage` · `vault.resource` ·
+`molit.apartment-transactions` · `gw.holiday`.
 
 ### 테스트 · 검증
 
@@ -812,11 +844,11 @@ Pipeline: checkout → Init → **Plugin manifests**(매니페스트·thin route
 | 1 | Admin 도메인 DNS → NCP 서버 (이름은 배포 저장소에 있음) | 0번의 callback URL과 글자 단위로 같아야 한다 | `nslookup` |
 | 2 | Harbor project 생성 → Jenkins job 생성(`HARBOR_REGISTRY`, `didim-fortigate-ca` 자격증명 포함) → 빌드 1회 | image가 없으면 3·4가 `ImagePullBackOff` | Harbor에 `sha-<7hex>` 태그 |
 | 3 | namespace + Secret 2개(`didim-mcp-codex-plugin-secret`, `harbor-registry-secret`) | Secret 없으면 Pod이 뜨지 못한다 | `kubectl get secret` |
-| 4 | **migration Job 1회** (`0001`+`0002`) | 앱은 기동 시 migration을 실행하지 않는다. 여기를 건너뛰면 5번이 NotReady | Job `complete`, 로그에 `0002_seed_initial_skills` |
+| 4 | **migration Job 1회** (`0001`~`0003`) | 앱은 기동 시 migration을 실행하지 않는다. 여기를 건너뛰면 5번이 NotReady | Job `complete`, 로그에 `0003_add_gw_holiday_skill` |
 | 5 | ArgoCD Application 적용 → Deployment rollout | 4번이 끝나야 Ready가 된다 | `Synced` / `Healthy` |
 | 6 | host nginx server block(443 → 31085) + 재적재 | 외부 진입 | `curl -s https://<admin-도메인>/health` |
 | 7 | `/ready` 확인 | DB·schema·SPA·JWKS 상태가 한 번에 나온다 | `schema_exists: true`, `status: ready` |
-| 8 | ADMIN 계정으로 브라우저 로그인 (Microsoft SSO) | 0·1번이 정확해야 성공 | Admin 목록 화면에 seed 3건 |
+| 8 | ADMIN 계정으로 브라우저 로그인 (Microsoft SSO) | 0·1번이 정확해야 성공 | Admin 목록 화면에 built-in 4건 |
 | 9 | USER 계정으로 403 확인 | 인가 경계 실증 | 관리 API 403 |
 | 10 | MCP 관리 화면에서 Provider `didim-skill` 등록 (runtime OpenAPI import) | 5·6번 이후. Tool 2개가 생성된다 | `didim-skill__get_skill`, `didim-skill__list_skills` |
 | 11 | 포털에서 사용자별로 그 Tool 활성화 | 안 켜면 라우터가 멈춘다 | `tools/list`에 노출 |

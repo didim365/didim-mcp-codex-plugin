@@ -36,8 +36,11 @@ Entry point: `app/main.py:create_app()` → `uvicorn app.main:app`.
 문서와 코드가 어긋나면 **코드를 따르고, 어긋난 사실을 사용자에게 보고**한다.
 문서에 맞추려고 코드를 바꾸지 않는다.
 
-**runtime workflow 의 정본은 소스가 아니라 DB 다.** `app/seed/` 는 초기 이관 스냅샷이며
-1회용이다 — 거기를 고쳐도 이미 seed 된 DB 는 바뀌지 않는다.
+**runtime workflow 의 정본은 소스가 아니라 DB 다.** `app/seed/` 는 built-in Skill 을 DB 로
+넣기 위한 스냅샷이다 — 거기를 고쳐도 이미 seed 된 DB 는 바뀌지 않는다. **manifest 에 항목을
+추가하는 것만으로는 배포된 환경에 반영되지 않는다**(적용된 migration 은 다시 실행되지
+않는다). built-in Skill 추가는 manifest·body + `install_seed_skills(...)` 를 부르는 새
+migration 한 건이 한 쌍이다(선례: `0003_add_gw_holiday_skill` → `gw.holiday`).
 
 | 문서 | 독자 | 담는 것 |
 | --- | --- | --- |
