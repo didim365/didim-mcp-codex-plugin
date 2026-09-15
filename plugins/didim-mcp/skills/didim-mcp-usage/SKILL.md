@@ -43,8 +43,9 @@ These are safety rules, not workflow. The registry cannot relax them.
    secret returned by a tool. Never ask the user for one either — the connection
    is authenticated by Codex's OAuth sign-in, not by anything the user types.
 5. Clearly separate MCP execution results from model analysis or recommendation.
-6. If a required tool is unavailable, state that limitation. Do not invent a
-   tool, alternate endpoint, or other unauthorized workaround.
+6. If a required tool is unavailable, state that limitation — **the missing
+   tool is the only reason to stop.** Do not invent a tool, alternate endpoint,
+   or other unauthorized workaround.
 7. Tool authorization is decided by the Didim MCP server, never by a skill body.
    A tool listed in a registry entry is **not** permission to call it.
 
@@ -68,8 +69,10 @@ conclude from an empty CLI listing that Didim MCP is unavailable. A nested
 
 ## If the registry cannot be reached
 
-Fail closed. Do **not** improvise a workflow, and do not fall back to a
-remembered older version of this skill.
+Fail closed **on the procedure, not on the tools.** Do **not** improvise a
+workflow or fall back to a remembered older version of this skill. The registry
+supplies the *recipe*; the Didim MCP tools exposed to this session supply the
+*capability*, and those are independent.
 
 - **No Didim tool at all in this session** → the server is unavailable to this
   session. Delegate to `didim-mcp-connect`. Do not call it a portal entitlement
@@ -77,6 +80,10 @@ remembered older version of this skill.
 - **`didim-skill__get_skill` missing while other Didim tools work** → portal
   entitlement. The user enables `Didim Skill Registry` tools in the Didim portal
   and restarts Codex.
-- **The tool runs but returns an error, or the skill_key is not published** →
-  say the workflow is not available right now and stop. The user can still ask
-  for a specific Didim tool directly under the invariants above.
+- **The tool runs but returns an error, times out, or `mcp.usage` is not
+  published** → say the curated procedure could not be loaded, then **carry on
+  with the user's request using the exposed Didim tools under the invariants
+  above.** A missing recipe is not a missing capability: pick a tool only when
+  its exact name, description, and input schema fit the request, build arguments
+  only from the schema and the user's words, and report the capability as
+  unavailable only when no exposed tool fits.

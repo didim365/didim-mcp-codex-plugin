@@ -51,18 +51,39 @@ procedures that existed when the plugin shipped; anything an operator publishes
 later has no dedicated router, so this one lists what is currently published,
 picks a `skill_key` from the names and descriptions, and fetches it. That is how
 a brand-new procedure becomes usable **without reinstalling the plugin**. It
-only engages when the user named Didim and no dedicated skill fits, and it stops
-rather than improvising when nothing matches.
+only engages when the user named Didim and no dedicated skill fits. When nothing
+matches, it does not improvise a Didim procedure — it goes on to use the Didim
+MCP tools that are actually exposed (see **Skills are optional recipes** below).
 
 The registry tools (`didim-skill__get_skill`, `didim-skill__list_skills`) are
 ordinary Didim MCP tools — **enable them in the Didim portal** like any other.
 If they are missing while other Didim tools work, that is a portal entitlement
 matter, not an authentication problem.
 
-**If the registry cannot be reached, the routers stop.** They do not invent a
-procedure and do not fall back to a remembered older version. That is
-deliberate: a half-remembered workflow that touches Vault credentials or public
-data APIs is worse than a clear "not available right now".
+## Skills are optional recipes, not the capability itself
+
+```
+Skill = how to use tools      (an optional workflow overlay)
+Tool  = what can be executed  (the real capability)
+```
+
+A registry skill describes which MCP tools to use, in what order, under what
+rules. The tools themselves work with or without one. So:
+
+| Situation | What happens |
+| --- | --- |
+| A published skill matches | The curated recipe is used — better ordering, better guard rails |
+| No skill matches | The tools exposed to the session are used directly, chosen by their exact name, description, and input schema |
+| The registry is empty, erroring, or unreachable | Same as "no skill matches" — the recipe could not be loaded, the tools still work |
+| **The tool itself is not exposed** | **Only then** is the capability genuinely unavailable |
+
+**If the registry cannot be reached, the routers fail closed on the *procedure*,
+not on the tools.** They do not invent a workflow and do not fall back to a
+remembered older version — a half-remembered workflow that touches Vault
+credentials or public data APIs is worse than none. But they do not refuse work
+that an exposed tool can plainly do, and every safety rule (exposed tools only,
+exact names, schema-conformant arguments, approval before write or high-risk
+actions, no credential in a reply) still applies in that mode.
 
 Full installation, connection, update, and removal instructions (in Korean) live
 in the repository README:

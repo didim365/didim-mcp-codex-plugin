@@ -508,6 +508,35 @@ Skill인데, 연결이 끊기면 Registry Tool도 부를 수 없습니다.** 자
 router에 남긴 것은 셋뿐입니다: **언제 Registry를 조회할지 · 어떤 `skill_key`인지 ·
 Registry가 없을 때 무엇을 하지 말지(안전 invariant)**.
 
+### Skill은 선택적 recipe입니다 — Tool 사용 가능 여부를 결정하지 않습니다
+
+```
+Skill = how to use tools      (선택적 workflow overlay)
+Tool  = what can be executed  (실제 실행 capability)
+```
+
+Runtime Skill은 "어떤 MCP Tool을 어떤 순서와 규칙으로 쓸 것인가"를 적은 recipe입니다.
+Tool은 그 recipe가 있든 없든 동작합니다. 그래서 **Dynamic Skill은 MCP Tool의 사용 가능
+여부를 결정하지 않습니다.**
+
+| 상황 | 동작 |
+| --- | --- |
+| 관련 Skill 있음 | curated recipe 우선 — 더 정교한 절차와 가드레일 |
+| 관련 Skill 없음 | 노출된 Tool을 exact name · description · inputSchema로 직접 선택해 사용 |
+| Registry가 비었거나 5xx·timeout·미배포 | 위와 동일. **recipe를 못 읽은 것이지 Tool이 없는 것이 아닙니다** |
+| **Tool 자체가 노출되지 않음** | **이때만** 해당 capability를 사용할 수 없습니다 |
+
+Skill이 없다고 안전 규칙이 풀리지는 않습니다. fallback에서도 노출된 Tool만, 정확한
+이름으로, inputSchema(`required`·type·enum·min/max)를 지켜 호출하고, schema에 없는 인자를
+만들지 않으며, 쓰기·고위험 작업의 승인 게이트를 유지합니다.
+
+반대로 **Skill에 적힌 Tool이 지금 사용자에게 노출돼 있다는 보장도 없습니다.** Skill은
+있는데 필요한 Tool이 없으면 Tool 미노출로 안내하고, 이름이 다른 Tool로 대체하지 않습니다.
+
+실제 사례: Registry에 `gw.holiday`가 없던 시점에 `didim-gw__get_my_holiday_info`가 노출돼
+있었는데도 "절차가 등록되어 있지 않아 조회할 수 없다"고 답한 적이 있습니다. 그것이 이
+정책을 명문화한 이유이며, `tests/test_skill_md_contract.py`가 회귀를 막습니다.
+
 ### Microsoft SSO
 
 새 로그인 시스템을 만들지 않았습니다. 기존 DIDIM Auth를 그대로 재사용합니다.
@@ -660,7 +689,7 @@ FastAPI 기본 형식입니다.
 | DB 연결 불가 | `/ready` 503, API 503. **빈 목록이나 오래된 캐시로 위장하지 않는다** |
 | Auth 연결 불가 | 401(신원 확인 불가). 통과시키지 않는다 |
 | JWKS 조회 불가 | 503(검증 불가). "토큰이 나쁘다"로 오해하게 하지 않는다 |
-| Registry Tool 미노출 | thin router가 **절차를 지어내지 않고** 중단 + 원인별 안내 |
+| Registry Tool 미노출 | thin router가 **절차를 지어내지 않는다.** 노출된 MCP Tool 로는 계속 진행 + 원인별 안내 |
 | skill_key 미배포 | runtime 404. "있지만 배포 전"이라는 사실도 알리지 않는다 |
 | Skill disabled | runtime 404 |
 
@@ -852,10 +881,23 @@ Pipeline: checkout → Init → **Plugin manifests**(매니페스트·thin route
 | 9 | USER 계정으로 403 확인 | 인가 경계 실증 | 관리 API 403 |
 | 10 | MCP 관리 화면에서 Provider `didim-skill` 등록 (runtime OpenAPI import) | 5·6번 이후. Tool 2개가 생성된다 | `didim-skill__get_skill`, `didim-skill__list_skills` |
 | 11 | 포털에서 사용자별로 그 Tool 활성화 | 안 켜면 라우터가 멈춘다 | `tools/list`에 노출 |
-| 12 | 플러그인 설치/갱신 (`codex plugin add didim-mcp@didim`) | 10·11 이후여야 의미가 있다 | `codex plugin list` 에 0.3.0 |
+| 12 | 플러그인 설치/갱신 (`codex plugin add didim-mcp@didim`) | 10·11 이후여야 의미가 있다 | `codex plugin list` 에 0.3.1 |
 | 13 | **Human UAT** | 아래 참조 | — |
 
-UAT에서 반드시 보는 것 두 가지:
+UAT에서 반드시 보는 것 **세 가지**:
+
+0. **Skill 없이도 Tool이 되는가 (회귀 케이스)** — 아래 표 참조. 이것이 깨지면 Registry에
+   절차가 없다는 이유로 멀쩡한 Tool이 차단된다.
+
+| Case | Runtime Skill | MCP Tool | 발화 | 기대 |
+| --- | --- | --- | --- | --- |
+| A | `gw.holiday` **없음** | `didim-gw__get_my_holiday_info` 있음 | "didim mcp 작년 연차 조회" | no-match → 일반 Tool fallback → `{"year": <현재 연도 - 1>}` → 정상 응답 |
+| B | `gw.holiday` PUBLISHED | 〃 | 〃 | `list_skills` → `get_skill("gw.holiday")` → recipe → 같은 Tool → 같은 인자 |
+| C | 관련 Skill 없음 | 관련 Tool도 **없음** | 〃 | "해당 Tool이 현재 Didim MCP 도구에 없습니다" (capability unavailable) |
+
+A와 B는 **둘 다 성공**해야 한다. 차이는 workflow 품질뿐이다. A에서
+`"연차 조회 절차가 Skill Registry에 등록되어 있지 않아 조회할 수 없습니다"` 가 나오면
+**regression failure**다.
 
 1. 전용 라우터 — "내 Vault 리소스 보여줘" → `didim-skill__get_skill("vault.resource")` 가
    실제로 호출되는가.

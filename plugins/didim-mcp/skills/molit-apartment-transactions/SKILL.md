@@ -76,11 +76,17 @@ or header here.
 
 ## If the registry cannot be reached
 
-Fail closed. Do not improvise the query procedure from memory — the legal-dong
-resolution rules are exactly the part that must not be guessed.
+Fail closed **on the procedure, not on the tools.** Do not improvise the query
+procedure from memory — the legal-dong resolution rules are exactly the part
+that must not be guessed. A missing recipe is still not a missing capability.
 
 - **No Didim tool at all** → connection problem → `didim-mcp-connect`.
 - **`didim-skill__get_skill` missing while other Didim tools work** → portal
   entitlement: enable the Didim Skill Registry tools and restart Codex.
-- **Registry error or the skill not published** → say the workflow is
-  unavailable and stop.
+- **Registry error, timeout, or the skill not published** → say the curated
+  procedure could not be loaded, then continue with the exposed tools under the
+  invariants above. Those invariants already carry the parts that must not be
+  guessed: **the legal-dong code comes from `odcloud__get_legal_dong_codes` and
+  never from memory**, dates are computed against the actual current date, and
+  ambiguous districts or transaction types are asked about rather than chosen.
+  If you cannot satisfy them without the recipe, say so instead of guessing.

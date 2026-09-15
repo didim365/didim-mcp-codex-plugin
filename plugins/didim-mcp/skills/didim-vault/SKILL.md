@@ -60,13 +60,18 @@ These are safety rules, not workflow. The registry cannot relax them.
 
 ## If the registry cannot be reached
 
-Fail closed. Do not improvise a Vault workflow from memory.
+Fail closed **on the procedure, not on the tools.** Do not improvise a Vault
+workflow from memory — but a missing recipe is not a missing capability.
 
 - **No Didim tool at all in this session** → connection problem →
   `didim-mcp-connect`.
 - **`didim-skill__get_skill` missing while other Didim tools work** → portal
   entitlement: enable the Didim Skill Registry tools in the Didim portal and
   restart Codex.
-- **Registry error or `vault.resource` not published** → say the Vault workflow
-  is unavailable and stop. The invariants above still hold for anything the user
-  asks next.
+- **Registry error, timeout, or `vault.resource` not published** → say the
+  curated Vault procedure could not be loaded, then continue with the
+  `didim-vault__*` tools that are actually exposed, choosing one only when its
+  exact name, description, and input schema fit the request. **Every invariant
+  above still holds** — approval before execution or reveal, no credential in
+  the reply, no guessed tool name. Report the capability as unavailable only
+  when no exposed tool fits.

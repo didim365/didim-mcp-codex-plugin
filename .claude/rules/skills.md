@@ -47,9 +47,37 @@ router 본문에 남기는 것은 **넷뿐**이다. 그 밖의 업무 절차를 
 2. **`skill_key`** — `didim-skill__get_skill` 에 그대로 넘길 문자열.
 3. **안전 invariant** — Registry가 완화할 수 없는 규칙(secret 미출력, 승인 게이트, 코드
    기억 생성 금지, Tool 인가는 서버 소관).
-4. **Registry 사용 불가 시 동작** — fail-closed. **절차를 지어내지 않고, 기억하는 예전
-   버전으로 되돌아가지 않는다.** 원인 3분기(Didim Tool 0개 → 연결 / 특정 Tool 없음 →
-   포털 권한 / Registry 오류·미배포 → 중단)를 그대로 유지한다.
+4. **Registry 사용 불가 시 동작** — **절차에 대해서만 fail-closed 다.** 절차를 지어내지
+   않고, 기억하는 예전 버전으로 되돌아가지 않는다. 그러나 **Registry 실패를 MCP Tool
+   사용 금지로 확대하지 않는다**(아래 절). 원인 3분기(Didim Tool 0개 → 연결 / 특정 Tool
+   없음 → 포털 권한 / Registry 오류·미배포 → recipe 없이 일반 Tool 사용)를 유지한다.
+
+## Skill 은 optional recipe 다 — Tool 가용성을 결정하지 않는다
+
+이 저장소에서 가장 쉽게 깨지는 계약이다. 실제로 한 번 깨졌다: Registry 에 `gw.holiday`
+가 없다는 이유로 `didim-gw__get_my_holiday_info` 가 노출돼 있는데도 "절차가 등록되어
+있지 않아 조회할 수 없다" 고 답했다.
+
+```
+Skill = how to use tools   (optional recipe / workflow overlay)
+Tool  = what can be executed
+```
+
+- **Runtime Skill 없음 → recipe 없음.** 요청을 중단하는 사유가 아니다. 노출된 Tool 로
+  일반 Tool discovery/execution 을 계속한다.
+- **Tool 없음 → capability 없음.** 이때만 중단한다.
+- match 가 있으면 **curated recipe 를 우선**한다. generic fallback 이 recipe 를 밀어내지
+  않는다.
+- Registry 5xx·timeout·빈 목록·401/403 은 "recipe lookup 실패" 일 뿐이다. 다른 Didim Tool
+  이 정상이면 일반 Tool 모드로 진행한다. 모든 Didim Tool 이 401/403 이면 그때는 인증
+  문제이고 `didim-mcp-connect` 소관이다.
+- fallback 이라고 안전 규칙이 풀리지 않는다. 노출된 Tool 만, exact name 으로, inputSchema
+  (`required`·type·enum·min/max)를 지켜서 부른다. schema 에 없는 인자를 만들지 않고,
+  없는 Tool 이름을 추측하지 않으며, 쓰기·고위험 작업의 승인 게이트를 유지한다.
+- 반대 방향도 참이다. **Skill 에 적힌 Tool 이 이 세션에 노출돼 있다는 보장은 없다.**
+  Skill 있음 + Tool 없음 → Tool 미노출 안내이고, 이름이 다른 Tool 로 대체하지 않는다.
+
+`tests/test_skill_md_contract.py` 가 SKILL.md 본문에서 이 계약을 정적으로 고정한다.
 
 `didim-skill__get_skill` · `didim-skill__list_skills` 이름은 MCP gateway의 provider
 slug(`didim-skill`)와 Registry runtime endpoint의 `operation_id` 양쪽에 묶여 있다.

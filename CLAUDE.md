@@ -81,6 +81,12 @@ Codex 의 Skill selector 는 DB 를 읽지 않는다. 그래서 **트리거 문�
 generic fallback 이다. `didim-skill__list_skills` 로 배포본 목록을 받아 Codex 가
 `skill_key` 를 고른다. **그래서 새 Skill 은 플러그인 릴리스 없이 발견된다.**
 
+**Runtime Skill 은 optional recipe 이지 capability 가 아니다.** `Skill = how to use
+tools · Tool = what can be executed`. Registry 에 match 가 없거나 Registry 가 죽어도
+노출된 MCP Tool 사용을 막지 않는다 — 일반 Tool discovery/execution 으로 fallback 한다.
+**Tool 자체가 없을 때만 capability unavailable 이다.** 상세는
+`.claude/rules/skills.md`.
+
 정확히 말하면 이렇다.
 
 | 하는 일 | 릴리스 필요? |

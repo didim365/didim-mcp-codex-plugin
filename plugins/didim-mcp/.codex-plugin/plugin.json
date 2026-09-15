@@ -1,6 +1,6 @@
 {
   "name": "didim-mcp",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Use Didim MCP with your Microsoft account. The plugin registers the hosted Didim MCP server and Codex runs the OAuth sign-in; no API key is ever entered. Skill workflows are published from the Didim Skill Registry, so they update without reinstalling the plugin.",
   "author": {
     "name": "Didim365"
